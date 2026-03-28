@@ -167,4 +167,54 @@ const refresh = async (req, res) => {
   }
 };
 
-module.exports = { login, refresh };
+// GET /audit-logs
+const getAuditLogs = async (req, res) => {
+  try {
+    const { user_id, action, resource_type, date_from, date_to } = req.query;
+
+    let query = 'SELECT * FROM audit_logs WHERE 1=1';
+    const params = [];
+
+    // DISPATCHER เห็นได้เฉพาะ log ของตัวเอง
+    if (req.user.role === 'DISPATCHER') {
+      query += ' AND user_id = ?';
+      params.push(req.user.userId);
+    } else {
+      // ADMIN filter ตาม user_id ได้
+      if (user_id) {
+        query += ' AND user_id = ?';
+        params.push(user_id);
+      }
+    }
+
+    if (action) {
+      query += ' AND action = ?';
+      params.push(action);
+    }
+    if (resource_type) {
+      query += ' AND resource_type = ?';
+      params.push(resource_type);
+    }
+    if (date_from) {
+      query += ' AND created_at >= ?';
+      params.push(date_from);
+    }
+    if (date_to) {
+      query += ' AND created_at <= ?';
+      params.push(date_to + ' 23:59:59');
+    }
+
+    query += ' ORDER BY created_at DESC LIMIT 200';
+
+    const [rows] = await db.query(query, params);
+    res.json(rows);
+
+  } catch (err) {
+    console.error('Get audit logs error:', err);
+    res.status(500).json({
+      error: { code: 'INTERNAL_ERROR', message: 'เกิดข้อผิดพลาด', details: {} }
+    });
+  }
+};
+
+module.exports = { login, refresh, getAuditLogs }; // เพิ่ม getAuditLogs

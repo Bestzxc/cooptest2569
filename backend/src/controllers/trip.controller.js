@@ -374,5 +374,21 @@ const updateCheckpointStatus = async (req, res) => {
     });
   }
 };
+// GET /maintenance
+const getMaintenance = async (req, res) => {
+  try {
+    const [rows] = await db.query(`
+      SELECT m.*, v.license_plate, v.brand, v.model
+      FROM maintenance m
+      JOIN vehicles v ON m.vehicle_id = v.id
+      ORDER BY m.scheduled_at ASC
+    `);
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({
+      error: { code: 'INTERNAL_ERROR', message: 'เกิดข้อผิดพลาด', details: {} }
+    });
+  }
+};
 
-module.exports = { createTrip, getTrips, completeTrip, updateCheckpointStatus, getTripCheckpoints };
+module.exports = { createTrip, getTrips, completeTrip, updateCheckpointStatus, getTripCheckpoints, getMaintenance };

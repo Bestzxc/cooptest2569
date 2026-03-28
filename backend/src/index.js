@@ -21,6 +21,8 @@ app.use('/vehicles', require('./routes/vehicle.routes'));
 app.use('/drivers',  require('./routes/driver.routes')); 
 app.use('/trips',    require('./routes/trip.routes'));
 app.use('/alerts',   require('./routes/alert.routes'));
+app.use('/maintenance', require('./routes/maintenance.routes'));
+app.use('/dashboard',   require('./routes/dashboard.routes'));
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

@@ -12,19 +12,22 @@ export default function DashboardPage() {
   const [vehicles, setVehicles]     = useState([]);
   const [trips, setTrips]           = useState([]);
   const [alerts, setAlerts]         = useState([]);
+  const [barData, setBarData] = useState([]);
   const [loading, setLoading]       = useState(true);
 
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        const [vRes, tRes, aRes] = await Promise.all([
+        const [vRes, tRes, aRes, sRes] = await Promise.all([
           api.get('/vehicles'),
           api.get('/trips'),
           api.get('/alerts'),
+          api.get('/dashboard/stats'),
         ]);
         setVehicles(vRes.data);
         setTrips(tRes.data);
         setAlerts(aRes.data.alerts);
+        setBarData(sRes.data.distance7days);
       } catch (err) {
         console.error(err);
       } finally {
@@ -50,16 +53,6 @@ export default function DashboardPage() {
     value: vehicles.filter(v => v.status === s).length,
   })).filter(d => d.value > 0);
 
-  // ข้อมูลสำหรับ Bar chart (mock 7 วัน)
-  const barData = [
-    { day: 'จ',  km: 1240 },
-    { day: 'อ',  km: 2180 },
-    { day: 'พ',  km: 1890 },
-    { day: 'พฤ', km: 3120 },
-    { day: 'ศ',  km: 2760 },
-    { day: 'ส',  km: 1480 },
-    { day: 'อา', km: 2950 },
-  ];
 
   if (loading) return <Layout><div style={styles.center}>กำลังโหลด...</div></Layout>;
 
@@ -131,10 +124,10 @@ export default function DashboardPage() {
           <div style={{ height: 220 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={barData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                <XAxis dataKey="day" tick={{ fontSize: 12 }} />
-                <YAxis tick={{ fontSize: 12 }} />
+                <XAxis dataKey="day" tick={{ fontSize: 11, fill: '#7a8baa' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: '#7a8baa' }} axisLine={false} tickLine={false} />
                 <Tooltip formatter={v => [`${v} km`, 'Distance']} />
-                <Bar dataKey="km" fill="#2563eb" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="km" fill="#00d4ff" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -180,22 +173,38 @@ function MetricCard({ label, value, sub, accent }) {
 }
 
 const styles = {
-  title:       { margin: 0, fontSize: 20, fontWeight: 700 },
-  subtitle:    { margin: '4px 0 0', fontSize: 13, color: '#64748b' },
-  center:      { textAlign: 'center', padding: '3rem', color: '#94a3b8' },
+  title:       { margin: 0, fontSize: 22, fontWeight: 800, fontFamily: 'var(--font-display)', letterSpacing: 1 },
+  subtitle:    { margin: '4px 0 0', fontSize: 12, color: 'var(--text-secondary)' },
+  center:      { textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' },
   metricsGrid: { display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: '1.25rem' },
-  metricCard:  { background: '#f8fafc', borderRadius: 8, padding: '1rem' },
-  metricLabel: { fontSize: 12, color: '#64748b', marginBottom: 4 },
-  metricValue: { fontSize: 26, fontWeight: 700, fontFamily: 'monospace' },
-  metricSub:   { fontSize: 11, color: '#94a3b8', marginTop: 2 },
+  metricCard:  {
+    background: 'var(--bg-surface)',
+    border: '1px solid var(--border)',
+    borderRadius: 'var(--radius-md)',
+    padding: '1.1rem 1.25rem',
+    transition: 'border-color .2s',
+  },
+  metricLabel: { fontSize: 10, letterSpacing: 2, color: 'var(--text-muted)', marginBottom: 6, fontWeight: 600 },
+  metricValue: { fontSize: 28, fontWeight: 700, fontFamily: 'var(--font-mono)', letterSpacing: -1 },
+  metricSub:   { fontSize: 11, color: 'var(--text-muted)', marginTop: 4 },
   chartsGrid:  { display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '1rem', marginBottom: '1rem' },
-  chartCard:   { background: '#fff', borderRadius: 10, padding: '1rem', border: '1px solid #e2e8f0' },
-  chartTitle:  { fontSize: 13, fontWeight: 600, color: '#475569', marginBottom: 8 },
-  legend:      { display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#64748b' },
+  chartCard:   {
+    background: 'var(--bg-surface)',
+    border: '1px solid var(--border)',
+    borderRadius: 'var(--radius-md)',
+    padding: '1.1rem 1.25rem',
+  },
+  chartTitle:  { fontSize: 11, fontWeight: 600, letterSpacing: 2, color: 'var(--text-muted)', marginBottom: 10 },
+  legend:      { display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--text-secondary)' },
   legendDot:   { width: 8, height: 8, borderRadius: 2, display: 'inline-block' },
-  alertCard:   { background: '#fff', borderRadius: 10, padding: '1rem', border: '1px solid #e2e8f0' },
-  alertRow:    { display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid #f1f5f9' },
-  severityBadge: { fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 999, whiteSpace: 'nowrap' },
-  alertMsg:    { fontSize: 13, color: '#374151' },
-  noAlert:     { fontSize: 13, color: '#16a34a', padding: '8px 0' },
+  alertCard:   {
+    background: 'var(--bg-surface)',
+    border: '1px solid var(--border)',
+    borderRadius: 'var(--radius-md)',
+    padding: '1.1rem 1.25rem',
+  },
+  alertRow:    { display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid var(--border)' },
+  severityBadge: { fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 4, letterSpacing: 1 },
+  alertMsg:    { fontSize: 13, color: 'var(--text-primary)' },
+  noAlert:     { fontSize: 13, color: 'var(--success)', padding: '8px 0' },
 };

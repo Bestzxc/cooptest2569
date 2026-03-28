@@ -6,159 +6,113 @@ import api from '../services/api';
 export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-
+  const [error, setError]       = useState('');
+  const [loading, setLoading]   = useState(false);
   const { login } = useAuth();
-  const navigate = useNavigate();
+  const navigate  = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setLoading(true);
-
+    setError(''); setLoading(true);
     try {
       const res = await api.post('/auth/login', { username, password });
-
-      // เก็บ token และข้อมูล user ผ่าน AuthContext
       login(res.data.user, res.data.accessToken, res.data.refreshToken);
-
-      // redirect ไป dashboard
       navigate('/');
-
     } catch (err) {
-      const msg = err.response?.data?.error?.message || 'เกิดข้อผิดพลาด';
-      setError(msg);
+      setError(err.response?.data?.error?.message || 'เกิดข้อผิดพลาด');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={styles.container}>
-      <div style={styles.card}>
+    <div style={s.page}>
+      {/* Background grid */}
+      <div style={s.grid}/>
 
+      <div style={s.card}>
         {/* Logo */}
-        <div style={styles.logo}>🚛 Fleet HQ</div>
-        <p style={styles.subtitle}>Fleet Management Platform</p>
+        <div style={s.logoRow}>
+          <span style={s.logoIcon}>⬡</span>
+          <div>
+            <div style={s.logoText}>FLEET HQ</div>
+            <div style={s.logoSub}>Fleet Management Platform</div>
+          </div>
+        </div>
+
+        <div style={s.divider}/>
 
         {/* Form */}
         <form onSubmit={handleSubmit}>
-          <div style={styles.field}>
-            <label style={styles.label}>Username</label>
-            <input
-              style={styles.input}
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="กรอก username"
-              required
-            />
+          <div style={s.field}>
+            <label style={s.label}>USERNAME</label>
+            <input value={username} onChange={e => setUsername(e.target.value)}
+              placeholder="กรอก username" required autoFocus />
+          </div>
+          <div style={s.field}>
+            <label style={s.label}>PASSWORD</label>
+            <input type="password" value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="••••••••" required />
           </div>
 
-          <div style={styles.field}>
-            <label style={styles.label}>Password</label>
-            <input
-              style={styles.input}
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="กรอก password"
-              required
-            />
-          </div>
+          {error && <div style={s.error}>{error}</div>}
 
-          {/* Error message */}
-          {error && (
-            <div style={styles.error}>{error}</div>
-          )}
-
-          <button
-            type="submit"
-            style={styles.button}
-            disabled={loading}
-          >
-            {loading ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ'}
+          <button type="submit" style={s.btn} disabled={loading}>
+            {loading ? 'AUTHENTICATING...' : 'ENTER SYSTEM →'}
           </button>
         </form>
 
-        {/* hint */}
-        <div style={styles.hint}>
-          demo: admin / admin123
-        </div>
+        <div style={s.hint}>demo: admin / admin123</div>
       </div>
     </div>
   );
 }
 
-const styles = {
-  container: {
+const s = {
+  page: {
     minHeight: '100vh',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    background: '#f8fafc',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    background: 'var(--bg-base)',
+    position: 'relative', overflow: 'hidden',
+  },
+  grid: {
+    position: 'absolute', inset: 0,
+    backgroundImage: `
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px)
+    `,
+    backgroundSize: '40px 40px',
   },
   card: {
-    background: '#fff',
-    borderRadius: 12,
-    padding: '2rem',
-    width: 360,
-    boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
+    position: 'relative', zIndex: 1,
+    background: 'var(--bg-surface)',
+    border: '1px solid var(--border)',
+    borderRadius: 'var(--radius-lg)',
+    padding: '2rem', width: 380,
+    boxShadow: '0 0 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(0,212,255,0.05)',
   },
-  logo: {
-    fontSize: 24,
-    fontWeight: 700,
-    textAlign: 'center',
-    marginBottom: 4,
+  logoRow:  { display: 'flex', alignItems: 'center', gap: 12, marginBottom: '1.25rem' },
+  logoIcon: { fontSize: 28, color: 'var(--accent)', filter: 'drop-shadow(0 0 10px rgba(0,212,255,0.7))' },
+  logoText: { fontWeight: 800, fontSize: 18, letterSpacing: 3, fontFamily: 'var(--font-display)' },
+  logoSub:  { fontSize: 11, color: 'var(--text-muted)', letterSpacing: 1 },
+  divider:  { height: 1, background: 'var(--border)', margin: '0 0 1.5rem' },
+  field:    { marginBottom: '1rem' },
+  label:    { display: 'block', fontSize: 10, letterSpacing: 2, color: 'var(--text-muted)', marginBottom: 6, fontWeight: 600 },
+  error:    {
+    background: 'rgba(239,68,68,0.1)',
+    border: '1px solid rgba(239,68,68,0.3)',
+    color: '#f87171', padding: '8px 12px',
+    borderRadius: 'var(--radius-sm)',
+    fontSize: 12, marginBottom: '1rem',
   },
-  subtitle: {
-    textAlign: 'center',
-    color: '#64748b',
-    fontSize: 13,
-    marginBottom: '1.5rem',
+  btn: {
+    width: '100%', padding: '11px',
+    background: 'var(--accent)', color: '#000',
+    border: 'none', borderRadius: 'var(--radius-sm)',
+    fontSize: 12, fontWeight: 800,
+    letterSpacing: 2, fontFamily: 'var(--font-display)',
+    boxShadow: 'var(--accent-glow)',
   },
-  field: {
-    marginBottom: '1rem',
-  },
-  label: {
-    display: 'block',
-    fontSize: 13,
-    color: '#475569',
-    marginBottom: 4,
-  },
-  input: {
-    width: '100%',
-    padding: '8px 12px',
-    borderRadius: 6,
-    border: '1px solid #e2e8f0',
-    fontSize: 14,
-    outline: 'none',
-    boxSizing: 'border-box',
-  },
-  error: {
-    background: '#fee2e2',
-    color: '#dc2626',
-    padding: '8px 12px',
-    borderRadius: 6,
-    fontSize: 13,
-    marginBottom: '1rem',
-  },
-  button: {
-    width: '100%',
-    padding: '10px',
-    background: '#1d4ed8',
-    color: '#fff',
-    border: 'none',
-    borderRadius: 6,
-    fontSize: 14,
-    fontWeight: 600,
-    cursor: 'pointer',
-  },
-  hint: {
-    textAlign: 'center',
-    fontSize: 11,
-    color: '#94a3b8',
-    marginTop: '1rem',
-  },
+  hint: { textAlign: 'center', fontSize: 11, color: 'var(--text-muted)', marginTop: '1rem' },
 };

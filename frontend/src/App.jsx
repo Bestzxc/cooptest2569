@@ -6,6 +6,9 @@ import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import VehiclesPage from './pages/VehiclesPage';
 import TripsPage from './pages/TripsPage';
+import MaintenancePage from './pages/MaintenancePage';
+import AlertsPage from './pages/AlertsPage';
+import AuditLogPage from './pages/AuditLogPage';
 
 // ป้องกัน route ที่ต้อง login ก่อน
 function PrivateRoute({ children }) {
@@ -42,7 +45,24 @@ function App() {
           } />
 
           {/* redirect root ไป dashboard */}
-          <Route path="*" element={<Navigate to="/" />} />
+          <Route path="*" element={<Navigate to="/" />
+          } />
+          <Route path="/maintenance" element={
+            <PrivateRoute>
+              <MaintenancePage />
+            </PrivateRoute>
+          } />
+          <Route path="/alerts" element={
+            <PrivateRoute>
+              <AlertsPage />
+            </PrivateRoute>
+          } />
+          <Route path="/audit-logs" element={
+            <PrivateRoute>
+              <AuditLogPage />
+            </PrivateRoute>
+          } />
+
         </Routes>
       </BrowserRouter>
     </AuthProvider>

@@ -1,11 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const { login, refresh } = require('../controllers/auth.controller');
+const { login, refresh, getAuditLogs } = require('../controllers/auth.controller');
+const { authenticate } = require('../middleware/auth.middleware');
 
-// POST /auth/login
-router.post('/login', login);
-
-// POST /auth/refresh
+router.post('/login',   login);
 router.post('/refresh', refresh);
+
+// audit logs — ต้อง login ก่อน
+router.get('/audit-logs', authenticate, getAuditLogs);
 
 module.exports = router;

@@ -24,7 +24,6 @@ const createVehicle = async (req, res) => {
     if (type && !validTypes.includes(type)) {
       errors.type = `type ต้องเป็น ${validTypes.join(', ')} เท่านั้น`;
     }
-
     if (Object.keys(errors).length > 0) {
       return res.status(400).json({
         error: { code: 'VALIDATION_ERROR', message: 'ข้อมูลไม่ครบถ้วน', details: errors }
@@ -36,7 +35,6 @@ const createVehicle = async (req, res) => {
       'SELECT id FROM vehicles WHERE license_plate = ?',
       [license_plate]
     );
-
     if (existing.length > 0) {
       return res.status(400).json({
         error: { code: 'DUPLICATE_PLATE', message: 'ทะเบียนนี้มีในระบบแล้ว', details: {} }
@@ -49,7 +47,6 @@ const createVehicle = async (req, res) => {
         'SELECT * FROM drivers WHERE id = ?',
         [driver_id]
       );
-
       if (drivers.length === 0) {
         return res.status(400).json({
           error: { code: 'DRIVER_NOT_FOUND', message: 'ไม่พบ driver ที่ระบุ', details: {} }
@@ -75,7 +72,6 @@ const createVehicle = async (req, res) => {
     const finalMileage = mileage_km || 0;
     const finalLastService = last_service_km || 0;
     const finalNextService = next_service_km || 10000;
-
     await db.query(
       `INSERT INTO vehicles 
         (id, license_plate, type, driver_id, brand, model, year, 
@@ -177,7 +173,6 @@ const deleteVehicle = async (req, res) => {
        WHERE vehicle_id = ? AND status = 'IN_PROGRESS'`,
       [req.params.id]
     );
-
     if (activeTrips.length > 0) {
       return res.status(400).json({
         error: {
@@ -233,7 +228,6 @@ const updateVehicleStatus = async (req, res) => {
       'SELECT status FROM vehicles WHERE id = ?',
       [req.params.id]
     );
-
     if (rows.length === 0) {
       return res.status(404).json({
         error: { code: 'NOT_FOUND', message: 'ไม่พบ vehicle', details: {} }
