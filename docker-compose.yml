@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: fleet_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: fleet1234      # password สำหรับ root
+      MYSQL_DATABASE: fleet_db            # สร้าง database นี้อัตโนมัติ
+    ports:
+      - "3307:3306"   # เปิด port ให้ Express เชื่อมได้
+    volumes:
+      - fleet_mysql_data:/var/lib/mysql   # เก็บข้อมูลไว้แม้ปิด container
+
+  # phpMyAdmin
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: fleet_phpmyadmin
+    restart: always
+    depends_on:
+      - mysql           # รอให้ mysql ขึ้นก่อน
+    environment:
+      PMA_HOST: mysql   # ชี้ไปที่ service ชื่อ mysql ข้างบน
+      PMA_PORT: 3306
+    ports:
+      - "8080:80"       # เปิด phpMyAdmin ที่ localhost:8080
+
+volumes:
+  fleet_mysql_data:     # named volume เก็บข้อมูลถาวร
