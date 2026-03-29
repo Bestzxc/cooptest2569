@@ -5,28 +5,28 @@ import Toast, { useToast } from '../components/Toast';
 import { MdLocalShipping, MdAirportShuttle, MdDirectionsCar, MdTwoWheeler, MdLocalGasStation, MdPerson, MdAdd } from 'react-icons/md';
 
 const STATUS_COLOR = {
-  ACTIVE:      { bg: 'rgba(22,163,74,0.15)',   text: '#4ade80' },
-  IDLE:        { bg: 'rgba(234,179,8,0.15)',   text: '#facc15' },
-  MAINTENANCE: { bg: 'rgba(249,115,22,0.15)',  text: '#fb923c' },
-  RETIRED:     { bg: 'rgba(100,116,139,0.15)', text: '#94a3b8' },
+  ACTIVE: { bg: 'rgba(22,163,74,0.15)', text: '#4ade80' },
+  IDLE: { bg: 'rgba(234,179,8,0.15)', text: '#facc15' },
+  MAINTENANCE: { bg: 'rgba(249,115,22,0.15)', text: '#fb923c' },
+  RETIRED: { bg: 'rgba(100,116,139,0.15)', text: '#94a3b8' },
 };
 
 const TYPE_ICON = {
-  TRUCK:      <MdLocalShipping size={20} color="#00d4ff" />,
-  VAN:        <MdAirportShuttle size={20} color="#a78bfa" />,
-  PICKUP:     <MdDirectionsCar size={20} color="#34d399" />,
+  TRUCK: <MdLocalShipping size={20} color="#00d4ff" />,
+  VAN: <MdAirportShuttle size={20} color="#a78bfa" />,
+  PICKUP: <MdDirectionsCar size={20} color="#34d399" />,
   MOTORCYCLE: <MdTwoWheeler size={20} color="#fb923c" />,
 };
 
 export default function VehiclesPage() {
   const [vehicles, setVehicles] = useState([]);
-  const [drivers, setDrivers]   = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState('');
+  const [drivers, setDrivers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
-  const [search, setSearch]             = useState('');
+  const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('ALL');
-  const [filterType, setFilterType]     = useState('ALL');
+  const [filterType, setFilterType] = useState('ALL');
   const { toast, showToast, hideToast } = useToast();
 
   useEffect(() => { fetchAll(); }, []);
@@ -43,27 +43,34 @@ export default function VehiclesPage() {
     }
   };
 
-  const filtered = useMemo(() => vehicles.filter(v => {
-    if (filterStatus !== 'ALL' && v.status !== filterStatus) return false;
-    if (filterType   !== 'ALL' && v.type   !== filterType)   return false;
-    if (search) {
-      const s = search.toLowerCase();
-      return v.license_plate.toLowerCase().includes(s) ||
-             v.brand?.toLowerCase().includes(s) ||
-             v.model?.toLowerCase().includes(s);
-    }
-    return true;
-  }), [vehicles, filterStatus, filterType, search]);
+  const filtered = useMemo(() => {
+    const ORDER = { ACTIVE: 0, IDLE: 1, MAINTENANCE: 2, RETIRED: 3 };
+
+    return vehicles
+      .filter(v => {
+        if (filterStatus !== 'ALL' && v.status !== filterStatus) return false;
+        if (filterType !== 'ALL' && v.type !== filterType) return false;
+        if (search) {
+          const s = search.toLowerCase();
+          return v.license_plate.toLowerCase().includes(s) ||
+            v.brand?.toLowerCase().includes(s) ||
+            v.model?.toLowerCase().includes(s);
+        }
+        return true;
+      })
+      .sort((a, b) => (ORDER[a.status] ?? 9) - (ORDER[b.status] ?? 9));
+
+  }, [vehicles, filterStatus, filterType, search]);
 
   return (
     <Layout>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'1.5rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
         <div>
           <h1 style={styles.title}>Vehicles</h1>
           <p style={styles.subtitle}>จัดการยานพาหนะทั้งหมด</p>
         </div>
         <button style={styles.primaryBtn} onClick={() => setShowForm(true)}>
-          <MdAdd size={16}/> New Vehicle
+          <MdAdd size={16} /> New Vehicle
         </button>
       </div>
 
@@ -72,62 +79,62 @@ export default function VehiclesPage() {
           value={search} onChange={e => setSearch(e.target.value)} />
         <select style={styles.select} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
           <option value="ALL">Status: All</option>
-          {['ACTIVE','IDLE','MAINTENANCE','RETIRED'].map(s => <option key={s}>{s}</option>)}
+          {['ACTIVE', 'IDLE', 'MAINTENANCE', 'RETIRED'].map(s => <option key={s}>{s}</option>)}
         </select>
         <select style={styles.select} value={filterType} onChange={e => setFilterType(e.target.value)}>
           <option value="ALL">Type: All</option>
-          {['TRUCK','VAN','PICKUP','MOTORCYCLE'].map(t => <option key={t}>{t}</option>)}
+          {['TRUCK', 'VAN', 'PICKUP', 'MOTORCYCLE'].map(t => <option key={t}>{t}</option>)}
         </select>
         <span style={styles.count}>แสดง {filtered.length}/{vehicles.length}</span>
       </div>
 
       {loading && <div style={styles.center}>กำลังโหลด...</div>}
-      {error   && <div style={styles.errorBox}>{error}</div>}
+      {error && <div style={styles.errorBox}>{error}</div>}
 
       {!loading && !error && (
         <div style={styles.grid}>
           {filtered.length === 0
             ? <div style={styles.center}>ไม่พบข้อมูล</div>
             : filtered.map(v => {
-                const sc  = STATUS_COLOR[v.status] || STATUS_COLOR.IDLE;
-                const pct = v.next_service_km
-                  ? Math.min(100, ((v.mileage_km - v.last_service_km) /
-                      (v.next_service_km - v.last_service_km)) * 100)
-                  : 0;
-                return (
-                  <div key={v.id} style={styles.card}>
-                    <div style={styles.cardHeader}>
-                      <span style={styles.typeIcon}>{TYPE_ICON[v.type]}</span>
-                      <span style={styles.plate}>{v.license_plate}</span>
-                      <span style={{ ...styles.badge, background: sc.bg, color: sc.text }}>
-                        {v.status}
-                      </span>
-                    </div>
-                    <div style={styles.cardBody}>
-                      <div style={styles.info}>{v.brand} {v.model} ({v.year})</div>
-                      <div style={styles.info}>
-                        <MdLocalGasStation size={14} color="#facc15"/> {v.fuel_type}
-                      </div>
-                      {v.driver_name && (
-                        <div style={styles.info}>
-                          <MdPerson size={14} color="#00d4ff"/> {v.driver_name}
-                        </div>
-                      )}
-                    </div>
-                    <div style={styles.mileageRow}>
-                      <span style={styles.mileageText}>{v.mileage_km?.toLocaleString()} km</span>
-                      <div style={styles.progressBg}>
-                        <div style={{
-                          ...styles.progressFill,
-                          width: `${pct}%`,
-                          background: pct > 90 ? '#ef4444' : pct > 70 ? '#f59e0b' : '#10b981',
-                        }}/>
-                      </div>
-                      <span style={styles.mileageText}>next {v.next_service_km?.toLocaleString()}</span>
-                    </div>
+              const sc = STATUS_COLOR[v.status] || STATUS_COLOR.IDLE;
+              const pct = v.next_service_km
+                ? Math.min(100, ((v.mileage_km - v.last_service_km) /
+                  (v.next_service_km - v.last_service_km)) * 100)
+                : 0;
+              return (
+                <div key={v.id} style={styles.card}>
+                  <div style={styles.cardHeader}>
+                    <span style={styles.typeIcon}>{TYPE_ICON[v.type]}</span>
+                    <span style={styles.plate}>{v.license_plate}</span>
+                    <span style={{ ...styles.badge, background: sc.bg, color: sc.text }}>
+                      {v.status}
+                    </span>
                   </div>
-                );
-              })
+                  <div style={styles.cardBody}>
+                    <div style={styles.info}>{v.brand} {v.model} ({v.year})</div>
+                    <div style={styles.info}>
+                      <MdLocalGasStation size={14} color="#facc15" /> {v.fuel_type}
+                    </div>
+                    {v.driver_name && (
+                      <div style={styles.info}>
+                        <MdPerson size={14} color="#00d4ff" /> {v.driver_name}
+                      </div>
+                    )}
+                  </div>
+                  <div style={styles.mileageRow}>
+                    <span style={styles.mileageText}>{v.mileage_km?.toLocaleString()} km</span>
+                    <div style={styles.progressBg}>
+                      <div style={{
+                        ...styles.progressFill,
+                        width: `${pct}%`,
+                        background: pct > 90 ? '#ef4444' : pct > 70 ? '#f59e0b' : '#10b981',
+                      }} />
+                    </div>
+                    <span style={styles.mileageText}>next {v.next_service_km?.toLocaleString()}</span>
+                  </div>
+                </div>
+              );
+            })
           }
         </div>
       )}
@@ -150,12 +157,12 @@ export default function VehiclesPage() {
 
 function VehicleForm({ drivers, onClose, onSuccess }) {
   const [form, setForm] = useState({
-    license_plate:'', type:'TRUCK', brand:'', model:'',
-    year:'', fuel_type:'DIESEL', mileage_km:'0',
-    last_service_km:'0', next_service_km:'10000', driver_id:'',
+    license_plate: '', type: 'TRUCK', brand: '', model: '',
+    year: '', fuel_type: 'DIESEL', mileage_km: '0',
+    last_service_km: '0', next_service_km: '10000', driver_id: '',
   });
-  const [error, setError]     = useState('');
-  const [errors, setErrors]   = useState({});
+  const [error, setError] = useState('');
+  const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
   const f = (key, val) => {
@@ -167,17 +174,17 @@ function VehicleForm({ drivers, onClose, onSuccess }) {
     setError('');
     const errs = {};
     if (!form.license_plate.trim()) errs.license_plate = true;
-    if (!form.brand.trim())         errs.brand = true;
-    if (!form.model.trim())         errs.model = true;
-    if (!form.year)                 errs.year = true;
-    if (!form.mileage_km)           errs.mileage_km = true;
-    if (!form.next_service_km)      errs.next_service_km = true;
+    if (!form.brand.trim()) errs.brand = true;
+    if (!form.model.trim()) errs.model = true;
+    if (!form.year) errs.year = true;
+    if (!form.mileage_km) errs.mileage_km = true;
+    if (!form.next_service_km) errs.next_service_km = true;
 
     if (Object.keys(errs).length > 0) {
       setErrors(errs);
       const labels = {
-        license_plate:'ทะเบียนรถ', brand:'ยี่ห้อ', model:'รุ่น',
-        year:'ปี', mileage_km:'เลขไมล์', next_service_km:'Next Service KM',
+        license_plate: 'ทะเบียนรถ', brand: 'ยี่ห้อ', model: 'รุ่น',
+        year: 'ปี', mileage_km: 'เลขไมล์', next_service_km: 'Next Service KM',
       };
       return setError(`กรุณากรอก: ${Object.keys(errs).map(k => labels[k]).join(', ')}`);
     }
@@ -194,11 +201,11 @@ function VehicleForm({ drivers, onClose, onSuccess }) {
     try {
       await api.post('/vehicles', {
         ...form,
-        year:            Number(form.year),
-        mileage_km:      Number(form.mileage_km),
+        year: Number(form.year),
+        mileage_km: Number(form.mileage_km),
         last_service_km: Number(form.last_service_km),
         next_service_km: Number(form.next_service_km),
-        driver_id:       form.driver_id || undefined,
+        driver_id: form.driver_id || undefined,
       });
       onSuccess();
     } catch (err) {
@@ -226,13 +233,13 @@ function VehicleForm({ drivers, onClose, onSuccess }) {
         <div style={styles.modalBody}>
           <div style={styles.formGrid}>
             {[
-              ['ทะเบียน',          'license_plate',  'text',   'กข-1234'],
-              ['ยี่ห้อ',            'brand',          'text',   'Isuzu'],
-              ['รุ่น',              'model',          'text',   'D-Max'],
-              ['ปี',                'year',           'number', '2020'],
-              ['MILEAGE (KM)',      'mileage_km',     'number', '0'],
-              ['LAST SERVICE (KM)', 'last_service_km','number', '0'],
-              ['NEXT SERVICE (KM)', 'next_service_km','number', '10000'],
+              ['ทะเบียน', 'license_plate', 'text', 'กข-1234'],
+              ['ยี่ห้อ', 'brand', 'text', 'Isuzu'],
+              ['รุ่น', 'model', 'text', 'D-Max'],
+              ['ปี', 'year', 'number', '2020'],
+              ['MILEAGE (KM)', 'mileage_km', 'number', '0'],
+              ['LAST SERVICE (KM)', 'last_service_km', 'number', '0'],
+              ['NEXT SERVICE (KM)', 'next_service_km', 'number', '10000'],
             ].map(([label, key, type, ph]) => (
               <div key={key} style={styles.field}>
                 <label style={styles.label}>{label}</label>
@@ -249,7 +256,7 @@ function VehicleForm({ drivers, onClose, onSuccess }) {
               <label style={styles.label}>ประเภท</label>
               <select value={form.type} onChange={e => f('type', e.target.value)}
                 style={inputStyle('type')}>
-                {['TRUCK','VAN','PICKUP','MOTORCYCLE'].map(t => <option key={t}>{t}</option>)}
+                {['TRUCK', 'VAN', 'PICKUP', 'MOTORCYCLE'].map(t => <option key={t}>{t}</option>)}
               </select>
             </div>
 
@@ -257,11 +264,11 @@ function VehicleForm({ drivers, onClose, onSuccess }) {
               <label style={styles.label}>เชื้อเพลิง</label>
               <select value={form.fuel_type} onChange={e => f('fuel_type', e.target.value)}
                 style={inputStyle('fuel_type')}>
-                {['DIESEL','GASOLINE','ELECTRIC','HYBRID'].map(t => <option key={t}>{t}</option>)}
+                {['DIESEL', 'GASOLINE', 'ELECTRIC', 'HYBRID'].map(t => <option key={t}>{t}</option>)}
               </select>
             </div>
 
-            <div style={{ ...styles.field, gridColumn:'1 / -1' }}>
+            <div style={{ ...styles.field, gridColumn: '1 / -1' }}>
               <label style={styles.label}>คนขับ (optional)</label>
               <select value={form.driver_id} onChange={e => f('driver_id', e.target.value)}
                 style={inputStyle('driver_id')}>
@@ -291,36 +298,36 @@ function VehicleForm({ drivers, onClose, onSuccess }) {
 }
 
 const styles = {
-  title:       { margin:0, fontSize:20, fontWeight:700, color:'var(--text-primary)' },
-  subtitle:    { margin:'4px 0 0', fontSize:13, color:'var(--text-muted)' },
-  primaryBtn:  { display:'flex', alignItems:'center', gap:6, padding:'9px 16px', background:'var(--accent)', color:'#000', border:'none', borderRadius:'var(--radius-sm)', fontSize:13, fontWeight:700, cursor:'pointer' },
-  filterBar:   { display:'flex', gap:8, alignItems:'center', flexWrap:'wrap', marginBottom:'1rem', background:'var(--bg-surface)', padding:'12px', borderRadius:8, border:'1px solid var(--border)' },
-  searchInput: { padding:'7px 12px', borderRadius:6, border:'1px solid var(--border)', fontSize:13, width:220, outline:'none', background:'var(--bg-base)', color:'var(--text-primary)' },
-  select:      { padding:'7px 10px', borderRadius:6, border:'1px solid var(--border)', fontSize:13, outline:'none', background:'var(--bg-base)', color:'var(--text-primary)', width:'auto' },
-  count:       { marginLeft:'auto', fontSize:12, color:'var(--text-muted)' },
-  grid:        { display:'grid', gap:10 },
-  card:        { background:'var(--bg-surface)', borderRadius:10, padding:'14px 16px', border:'1px solid var(--border)' },
-  cardHeader:  { display:'flex', alignItems:'center', gap:8, marginBottom:8 },
-  typeIcon:    { fontSize:18 },
-  plate:       { fontWeight:700, fontSize:15, fontFamily:'monospace', flex:1, color:'var(--text-primary)' },
-  badge:       { fontSize:11, fontWeight:600, padding:'2px 8px', borderRadius:999 },
-  cardBody:    { marginBottom:10 },
-  info:        { fontSize:12, color:'var(--text-secondary)', marginBottom:2, display:'flex', alignItems:'center', gap:4 },
-  mileageRow:  { display:'flex', alignItems:'center', gap:8 },
-  mileageText: { fontSize:11, color:'var(--text-muted)', whiteSpace:'nowrap' },
-  progressBg:  { flex:1, height:6, background:'var(--bg-base)', borderRadius:3, overflow:'hidden' },
-  progressFill:{ height:'100%', borderRadius:3, transition:'width .3s' },
-  center:      { textAlign:'center', padding:'2rem', color:'var(--text-muted)' },
-  errorBox:    { background:'rgba(220,38,38,0.15)', color:'#f87171', padding:'12px', borderRadius:8, fontSize:13, border:'1px solid rgba(220,38,38,0.3)', marginTop: 8 },
-  overlay:     { position:'fixed', inset:0, background:'rgba(0,0,0,0.75)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center' },
-  modal:       { background:'var(--bg-surface)', borderRadius:'var(--radius-lg)', width:520, maxWidth:'90vw', border:'1px solid var(--border)', maxHeight:'90vh', display:'flex', flexDirection:'column' },
-  modalHeader: { display:'flex', justifyContent:'space-between', alignItems:'center', padding:'1.25rem 1.5rem', borderBottom:'1px solid var(--border)' },
-  modalTitle:  { fontSize:14, fontWeight:700, letterSpacing:2, color:'var(--accent)' },
-  closeBtn:    { background:'transparent', border:'none', color:'var(--text-secondary)', fontSize:16, cursor:'pointer' },
-  modalBody:   { padding:'1.25rem 1.5rem', overflowY:'auto' },
-  modalFooter: { display:'flex', justifyContent:'flex-end', gap:8, padding:'1rem 1.5rem', borderTop:'1px solid var(--border)' },
-  formGrid:    { display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0.75rem 1rem' },
-  field:       { display:'flex', flexDirection:'column', gap:4 },
-  label:       { fontSize:10, letterSpacing:2, color:'var(--text-muted)', fontWeight:600 },
-  cancelBtn:   { padding:'8px 16px', background:'transparent', border:'1px solid var(--border)', borderRadius:'var(--radius-sm)', color:'var(--text-secondary)', fontSize:13, cursor:'pointer' },
+  title: { margin: 0, fontSize: 20, fontWeight: 700, color: 'var(--text-primary)' },
+  subtitle: { margin: '4px 0 0', fontSize: 13, color: 'var(--text-muted)' },
+  primaryBtn: { display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: 'var(--accent)', color: '#000', border: 'none', borderRadius: 'var(--radius-sm)', fontSize: 13, fontWeight: 700, cursor: 'pointer' },
+  filterBar: { display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: '1rem', background: 'var(--bg-surface)', padding: '12px', borderRadius: 8, border: '1px solid var(--border)' },
+  searchInput: { padding: '7px 12px', borderRadius: 6, border: '1px solid var(--border)', fontSize: 13, width: 220, outline: 'none', background: 'var(--bg-base)', color: 'var(--text-primary)' },
+  select: { padding: '7px 10px', borderRadius: 6, border: '1px solid var(--border)', fontSize: 13, outline: 'none', background: 'var(--bg-base)', color: 'var(--text-primary)', width: 'auto' },
+  count: { marginLeft: 'auto', fontSize: 12, color: 'var(--text-muted)' },
+  grid: { display: 'grid', gap: 10 },
+  card: { background: 'var(--bg-surface)', borderRadius: 10, padding: '14px 16px', border: '1px solid var(--border)' },
+  cardHeader: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 },
+  typeIcon: { fontSize: 18 },
+  plate: { fontWeight: 700, fontSize: 15, fontFamily: 'monospace', flex: 1, color: 'var(--text-primary)' },
+  badge: { fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 999 },
+  cardBody: { marginBottom: 10 },
+  info: { fontSize: 12, color: 'var(--text-secondary)', marginBottom: 2, display: 'flex', alignItems: 'center', gap: 4 },
+  mileageRow: { display: 'flex', alignItems: 'center', gap: 8 },
+  mileageText: { fontSize: 11, color: 'var(--text-muted)', whiteSpace: 'nowrap' },
+  progressBg: { flex: 1, height: 6, background: 'var(--bg-base)', borderRadius: 3, overflow: 'hidden' },
+  progressFill: { height: '100%', borderRadius: 3, transition: 'width .3s' },
+  center: { textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' },
+  errorBox: { background: 'rgba(220,38,38,0.15)', color: '#f87171', padding: '12px', borderRadius: 8, fontSize: 13, border: '1px solid rgba(220,38,38,0.3)', marginTop: 8 },
+  overlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  modal: { background: 'var(--bg-surface)', borderRadius: 'var(--radius-lg)', width: 520, maxWidth: '90vw', border: '1px solid var(--border)', maxHeight: '90vh', display: 'flex', flexDirection: 'column' },
+  modalHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border)' },
+  modalTitle: { fontSize: 14, fontWeight: 700, letterSpacing: 2, color: 'var(--accent)' },
+  closeBtn: { background: 'transparent', border: 'none', color: 'var(--text-secondary)', fontSize: 16, cursor: 'pointer' },
+  modalBody: { padding: '1.25rem 1.5rem', overflowY: 'auto' },
+  modalFooter: { display: 'flex', justifyContent: 'flex-end', gap: 8, padding: '1rem 1.5rem', borderTop: '1px solid var(--border)' },
+  formGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem 1rem' },
+  field: { display: 'flex', flexDirection: 'column', gap: 4 },
+  label: { fontSize: 10, letterSpacing: 2, color: 'var(--text-muted)', fontWeight: 600 },
+  cancelBtn: { padding: '8px 16px', background: 'transparent', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', color: 'var(--text-secondary)', fontSize: 13, cursor: 'pointer' },
 };

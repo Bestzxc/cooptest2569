@@ -5,36 +5,36 @@ import { useAuth } from '../context/AuthContext';
 import { MdLock, MdLocalShipping, MdMap, MdLocationOn, MdPerson, MdBuild } from 'react-icons/md';
 
 const ACTION_COLOR = {
-  LOGIN:               '#2563eb',
-  LOGIN_SUCCESS:       '#16a34a',
-  LOGIN_FAILED:        '#dc2626',
-  CREATE_VEHICLE:      '#7c3aed',
-  DELETE_VEHICLE:      '#dc2626',
-  CREATE_TRIP:         '#2563eb',
-  COMPLETE_TRIP:       '#16a34a',
-  UPDATE_CHECKPOINT:   '#d97706',
-  CREATE_DRIVER:       '#7c3aed',
+  LOGIN: '#2563eb',
+  LOGIN_SUCCESS: '#16a34a',
+  LOGIN_FAILED: '#dc2626',
+  CREATE_VEHICLE: '#7c3aed',
+  DELETE_VEHICLE: '#dc2626',
+  CREATE_TRIP: '#2563eb',
+  COMPLETE_TRIP: '#16a34a',
+  UPDATE_CHECKPOINT: '#d97706',
+  CREATE_DRIVER: '#7c3aed',
   CHANGE_VEHICLE_STATUS: '#d97706',
 };
 
 const RESOURCE_ICON = {
-  auth:        <MdLock          size={18} color="#facc15" />,
-  vehicle:     <MdLocalShipping size={18} color="#00d4ff" />,
-  trip:        <MdMap           size={18} color="#34d399" />,
-  checkpoint:  <MdLocationOn    size={18} color="#f87171" />,
-  driver:      <MdPerson        size={18} color="#a78bfa" />,
-  maintenance: <MdBuild         size={18} color="#fb923c" />,
+  auth: <MdLock size={18} color="#facc15" />,
+  vehicle: <MdLocalShipping size={18} color="#00d4ff" />,
+  trip: <MdMap size={18} color="#34d399" />,
+  checkpoint: <MdLocationOn size={18} color="#f87171" />,
+  driver: <MdPerson size={18} color="#a78bfa" />,
+  maintenance: <MdBuild size={18} color="#fb923c" />,
 };
 
 export default function AuditLogPage() {
   const { user } = useAuth();
-  const [logs, setLogs]           = useState([]);
-  const [loading, setLoading]     = useState(true);
-  const [fAction, setFAction]     = useState('ALL');
-  const [fType, setFType]         = useState('ALL');
-  const [fUserId, setFUserId]     = useState('ALL');
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [fAction, setFAction] = useState('ALL');
+  const [fType, setFType] = useState('ALL');
+  const [fUserId, setFUserId] = useState('ALL');
   const [fDateFrom, setFDateFrom] = useState('');
-  const [fDateTo, setFDateTo]     = useState('');
+  const [fDateTo, setFDateTo] = useState('');
 
   useEffect(() => {
     fetchLogs();
@@ -44,11 +44,11 @@ export default function AuditLogPage() {
     setLoading(true);
     try {
       const params = {};
-      if (fAction   !== 'ALL') params.action        = fAction;
-      if (fType     !== 'ALL') params.resource_type = fType;
-      if (fUserId   !== 'ALL') params.user_id       = fUserId;
-      if (fDateFrom)           params.date_from     = fDateFrom;
-      if (fDateTo)             params.date_to       = fDateTo;
+      if (fAction !== 'ALL') params.action = fAction;
+      if (fType !== 'ALL') params.resource_type = fType;
+      if (fUserId !== 'ALL') params.user_id = fUserId;
+      if (fDateFrom) params.date_from = fDateFrom;
+      if (fDateTo) params.date_to = fDateTo;
 
       const res = await api.get('/auth/audit-logs', { params });
       setLogs(res.data);
@@ -60,8 +60,8 @@ export default function AuditLogPage() {
   };
 
   // unique actions สำหรับ filter dropdown
-  const uniqueActions   = [...new Set(logs.map(l => l.action))];
-  const uniqueUserIds   = [...new Set(logs.map(l => l.user_id).filter(Boolean))];
+  const uniqueActions = [...new Set(logs.map(l => l.action))];
+  const uniqueUserIds = [...new Set(logs.map(l => l.user_id).filter(Boolean))];
 
   return (
     <Layout>
@@ -102,7 +102,7 @@ export default function AuditLogPage() {
           value={fType}
           onChange={e => setFType(e.target.value)}>
           <option value="ALL">Resource: All</option>
-          {['auth','vehicle','trip','checkpoint','driver','maintenance'].map(t => (
+          {['auth', 'vehicle', 'trip', 'checkpoint', 'driver', 'maintenance'].map(t => (
             <option key={t} value={t}>{t}</option>
           ))}
         </select>
@@ -137,7 +137,7 @@ export default function AuditLogPage() {
               <table style={styles.table}>
                 <thead>
                   <tr style={styles.thead}>
-                    {['Timestamp','User','Action','Resource','ID','Detail'].map(h => (
+                    {['Timestamp', 'User', 'Action', 'Resource', 'ID', 'Detail'].map(h => (
                       <th key={h} style={styles.th}>{h}</th>
                     ))}
                   </tr>
@@ -180,7 +180,7 @@ export default function AuditLogPage() {
                             <span style={{
                               ...styles.resultBadge,
                               background: l.result === 'SUCCESS' ? 'rgba(22,163,74,0.15)' : 'rgba(220,38,38,0.15)',
-                              color:      l.result === 'SUCCESS' ? '#4ade80'               : '#f87171',
+                              color: l.result === 'SUCCESS' ? '#4ade80' : '#f87171',
                             }}>
                               {l.result}
                             </span>
@@ -202,61 +202,61 @@ export default function AuditLogPage() {
 }
 
 const styles = {
-  title:      { margin: 0, fontSize: 20, fontWeight: 700, color: 'var(--text-primary)' },
-  subtitle:   { margin: '4px 0 0', fontSize: 13, color: 'var(--text-muted)' },
-  center:     { textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' },
+  title: { margin: 0, fontSize: 20, fontWeight: 700, color: 'var(--text-primary)' },
+  subtitle: { margin: '4px 0 0', fontSize: 13, color: 'var(--text-muted)' },
+  center: { textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' },
 
-  filterBar:  {
+  filterBar: {
     display: 'flex', gap: 8, alignItems: 'center',
     flexWrap: 'wrap', background: 'var(--bg-surface)',
     padding: '12px', borderRadius: 8,
     border: '1px solid var(--border)', marginBottom: '1rem',
   },
-  select:     {
+  select: {
     padding: '7px 10px', borderRadius: 6,
     border: '1px solid var(--border)', fontSize: 13,
     outline: 'none', background: 'var(--bg-base)',
     color: 'var(--text-primary)',
   },
-  dateInput:  {
+  dateInput: {
     padding: '7px 10px', borderRadius: 6,
     border: '1px solid var(--border)', fontSize: 13,
     outline: 'none', background: 'var(--bg-base)',
     color: 'var(--text-primary)',
     colorScheme: 'dark',                          // ทำให้ date picker เป็น dark
   },
-  searchBtn:  {
+  searchBtn: {
     padding: '7px 14px', background: '#1d4ed8',
     color: '#fff', border: 'none', borderRadius: 6,
     fontSize: 13, cursor: 'pointer',
   },
-  count:      { marginLeft: 'auto', fontSize: 12, color: 'var(--text-muted)' },
+  count: { marginLeft: 'auto', fontSize: 12, color: 'var(--text-muted)' },
 
-  emptyBox:   {
+  emptyBox: {
     textAlign: 'center', padding: '2rem',
     color: 'var(--text-muted)', background: 'var(--bg-surface)',
     borderRadius: 8, border: '1px solid var(--border)',
   },
-  tableWrap:  {
+  tableWrap: {
     background: 'var(--bg-surface)', borderRadius: 10,
     border: '1px solid var(--border)', overflow: 'hidden',
   },
-  table:      { width: '100%', borderCollapse: 'collapse', fontSize: 12 },
-  thead:      { background: 'var(--bg-base)' },
-  th:         {
+  table: { width: '100%', borderCollapse: 'collapse', fontSize: 12 },
+  thead: { background: 'var(--bg-base)' },
+  th: {
     padding: '10px 12px', textAlign: 'left',
     fontWeight: 600, color: 'var(--text-secondary)',
     whiteSpace: 'nowrap', borderBottom: '1px solid var(--border)',
   },
-  tr:         { borderBottom: '1px solid var(--border)' },
-  td:         { padding: '10px 12px', verticalAlign: 'middle' },
+  tr: { borderBottom: '1px solid var(--border)' },
+  td: { padding: '10px 12px', verticalAlign: 'middle' },
 
-  timestamp:   { fontFamily: 'monospace', fontSize: 11, color: 'var(--text-muted)', whiteSpace: 'nowrap' },
-  userId:      { fontFamily: 'monospace', fontSize: 11, color: 'var(--text-secondary)' },
+  timestamp: { fontFamily: 'monospace', fontSize: 11, color: 'var(--text-muted)', whiteSpace: 'nowrap' },
+  userId: { fontFamily: 'monospace', fontSize: 11, color: 'var(--text-secondary)' },
   actionBadge: { fontSize: 11, fontWeight: 600 },
-  resource:    { fontSize: 12, color: 'var(--text-secondary)' },
-  resourceId:  { fontFamily: 'monospace', fontSize: 11, color: 'var(--text-muted)' },
-  detail:      { display: 'flex', alignItems: 'center', gap: 6 },
+  resource: { fontSize: 12, color: 'var(--text-secondary)' },
+  resourceId: { fontFamily: 'monospace', fontSize: 11, color: 'var(--text-muted)' },
+  detail: { display: 'flex', alignItems: 'center', gap: 6 },
   resultBadge: { fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 999 },
-  ip:          { fontSize: 10, color: 'var(--text-muted)', fontFamily: 'monospace' },
+  ip: { fontSize: 10, color: 'var(--text-muted)', fontFamily: 'monospace' },
 };

@@ -3,20 +3,22 @@ import Layout from '../components/Layout';
 import api from '../services/api';
 import ProvinceInput from '../components/ProvinceInput';
 import Toast, { useToast } from '../components/Toast';
+import ConfirmModal from '../components/ConfirmModal';
+import { useAuth } from '../context/AuthContext';
 import { MdPerson, MdLocalGasStation, MdHotel, MdInventory, MdMoveToInbox, MdSearch } from 'react-icons/md';
 
 const STATUS_COLOR = {
-  SCHEDULED:   { bg: 'rgba(109,40,217,0.15)',  text: '#a78bfa' },
-  IN_PROGRESS: { bg: 'rgba(37,99,235,0.15)',   text: '#60a5fa' },
-  COMPLETED:   { bg: 'rgba(22,163,74,0.15)',   text: '#4ade80' },
-  CANCELLED:   { bg: 'rgba(220,38,38,0.15)',   text: '#f87171' },
+  SCHEDULED: { bg: 'rgba(109,40,217,0.15)', text: '#a78bfa' },
+  IN_PROGRESS: { bg: 'rgba(37,99,235,0.15)', text: '#60a5fa' },
+  COMPLETED: { bg: 'rgba(22,163,74,0.15)', text: '#4ade80' },
+  CANCELLED: { bg: 'rgba(220,38,38,0.15)', text: '#f87171' },
 };
 
 const CHECKPOINT_COLOR = {
-  PENDING:  '#94a3b8',
-  ARRIVED:  '#2563eb',
+  PENDING: '#94a3b8',
+  ARRIVED: '#2563eb',
   DEPARTED: '#16a34a',
-  SKIPPED:  '#6b7280',
+  SKIPPED: '#6b7280',
 };
 
 export default function TripsPage() {
@@ -25,7 +27,10 @@ export default function TripsPage() {
   const [loading, setLoading] = useState(true);
   const [trackerTrip, setTrackerTrip] = useState(null);
   const [checkpoints, setCheckpoints] = useState([]);
+  const [filterStatus, setFilterStatus] = useState('ALL');
   const { toast, showToast, hideToast } = useToast();
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const { user } = useAuth();
 
   useEffect(() => { fetchTrips(); }, []);
 
@@ -51,6 +56,38 @@ export default function TripsPage() {
     }
   };
 
+  const completeTrip = async (tripId) => {
+    try {
+      await api.patch(`/trips/${tripId}/complete`);
+      showToast('Trip Complete อัตโนมัติ ✓');
+      fetchTrips();
+    } catch (err) {
+      showToast(err.response?.data?.error?.message || 'เกิดข้อผิดพลาด', 'error');
+    }
+  };
+
+  const deleteTrip = async () => {
+    try {
+      await api.delete(`/trips/${deleteConfirmId}`);
+      showToast('ลบ trip สำเร็จ');
+      fetchTrips();
+    } catch (err) {
+      showToast(err.response?.data?.error?.message || 'เกิดข้อผิดพลาด', 'error');
+    } finally {
+      setDeleteConfirmId(null);
+    }
+  };
+
+  // sort: IN_PROGRESS → SCHEDULED → COMPLETED → CANCELLED
+  const sortedTrips = [...trips].sort((a, b) => {
+    const order = { IN_PROGRESS: 0, SCHEDULED: 1, COMPLETED: 2, CANCELLED: 3 };
+    return (order[a.status] ?? 9) - (order[b.status] ?? 9);
+  });
+
+  const filteredTrips = sortedTrips.filter(t =>
+    filterStatus === 'ALL' ? true : t.status === filterStatus
+  );
+
   if (view === 'create') {
     return (
       <Layout>
@@ -72,6 +109,10 @@ export default function TripsPage() {
             setCheckpoints={setCheckpoints}
             onBack={() => setView('list')}
             showToast={showToast}
+            onComplete={async () => {
+              await completeTrip(trackerTrip.id);
+              setView('list');
+            }}
           />
         </Layout>
         <Toast toast={toast} onHide={hideToast} />
@@ -92,41 +133,86 @@ export default function TripsPage() {
           </button>
         </div>
 
+        {/* Filter Bar */}
+        <div style={styles.filterBar}>
+          {['ALL', 'IN_PROGRESS', 'SCHEDULED', 'COMPLETED', 'CANCELLED'].map(s => (
+            <button
+              key={s}
+              style={{
+                ...styles.filterBtn,
+                background: filterStatus === s ? 'rgba(0,212,255,0.15)' : 'transparent',
+                color: filterStatus === s ? 'var(--accent)' : 'var(--text-muted)',
+                border: filterStatus === s ? '1px solid var(--accent)' : '1px solid var(--border)',
+              }}
+              onClick={() => setFilterStatus(s)}
+            >
+              {s === 'ALL' ? 'ทั้งหมด' : s}
+              {s !== 'ALL' && (
+                <span style={{ marginLeft: 4, fontSize: 10, opacity: .7 }}>
+                  ({trips.filter(t => t.status === s).length})
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+
         {loading
           ? <div style={styles.center}>กำลังโหลด...</div>
           : <div style={styles.list}>
-              {trips.length === 0
-                ? <div style={styles.center}>ยังไม่มี trip</div>
-                : trips.map(t => {
-                    const sc = STATUS_COLOR[t.status] || STATUS_COLOR.SCHEDULED;
-                    return (
-                      <div key={t.id} style={styles.card}>
-                        <div style={styles.cardRow}>
-                          <span style={{ ...styles.badge, background: sc.bg, color: sc.text }}>
-                            {t.status}
-                          </span>
-                          <span style={styles.route}>
-                            {t.origin} → {t.destination}
-                          </span>
-                          <span style={styles.km}>{Number(t.distance_km).toLocaleString()} km</span>
-                          <span style={styles.plate}>{t.license_plate}</span>
-                          {(t.status === 'IN_PROGRESS' || t.status === 'SCHEDULED') && (
-                            <button style={styles.trackBtn} onClick={() => openTracker(t)}>
-                              Track
-                            </button>
-                          )}
-                        </div>
-                        <div style={styles.cardSub}>
-                          <MdPerson size={12} style={{ verticalAlign: 'middle' }} />
-                          {t.driver_name} · {new Date(t.started_at).toLocaleDateString('th-TH')} · {t.cargo_type}
-                        </div>
-                      </div>
-                    );
-                  })
-              }
-            </div>
+            {filteredTrips.length === 0
+              ? <div style={styles.center}>ไม่พบ trip</div>
+              : filteredTrips.map(t => {
+                const sc = STATUS_COLOR[t.status] || STATUS_COLOR.SCHEDULED;
+                return (
+                  <div key={t.id} style={styles.card}>
+                    <div style={styles.cardRow}>
+                      <span style={{ ...styles.badge, background: sc.bg, color: sc.text }}>
+                        {t.status}
+                      </span>
+                      <span style={styles.route}>
+                        {t.origin} → {t.destination}
+                      </span>
+                      <span style={styles.km}>{Number(t.distance_km).toLocaleString()} km</span>
+                      <span style={styles.plate}>{t.license_plate}</span>
+
+                      {(t.status === 'IN_PROGRESS' || t.status === 'SCHEDULED') && (
+                        <button style={styles.trackBtn} onClick={() => openTracker(t)}>
+                          Track
+                        </button>
+                      )}
+
+                      {user?.role === 'ADMIN' && t.status !== 'IN_PROGRESS' && (
+                        <button
+                          style={{ ...styles.trackBtn, background: 'rgba(220,38,38,0.15)', color: '#f87171', border: '1px solid rgba(220,38,38,0.3)' }}
+                          onClick={() => setDeleteConfirmId(t.id)}
+                        >
+                          ✕ ลบ
+                        </button>
+                      )}
+                    </div>
+                    <div style={styles.cardSub}>
+                      <MdPerson size={12} style={{ verticalAlign: 'middle' }} />
+                      {t.driver_name} · {new Date(t.started_at).toLocaleDateString('th-TH')} · {t.cargo_type}
+                    </div>
+                  </div>
+                );
+              })
+            }
+          </div>
         }
       </Layout>
+
+      {deleteConfirmId && (
+        <ConfirmModal
+          title="ลบ Trip นี้?"
+          message="การลบจะไม่สามารถกู้คืนได้ และ checkpoints ทั้งหมดจะถูกลบด้วย"
+          confirmLabel="✕ ลบ"
+          danger={true}
+          onConfirm={deleteTrip}
+          onCancel={() => setDeleteConfirmId(null)}
+        />
+      )}
+
       <Toast toast={toast} onHide={hideToast} />
     </>
   );
@@ -137,6 +223,8 @@ function TripForm({ onSuccess, onCancel }) {
   const [step, setStep] = useState(1);
   const [vehicles, setVehicles] = useState([]);
   const [drivers, setDrivers] = useState([]);
+  const [busyVehicleIds, setBusyVehicleIds] = useState([]);
+  const [busyDriverIds, setBusyDriverIds] = useState([]);
   const [form, setForm] = useState({
     vehicle_id: '', driver_id: '',
     origin: '', destination: '', distance_km: '',
@@ -147,10 +235,13 @@ function TripForm({ onSuccess, onCancel }) {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    Promise.all([api.get('/vehicles'), api.get('/drivers')])
-      .then(([vRes, dRes]) => {
+    Promise.all([api.get('/vehicles'), api.get('/drivers'), api.get('/trips')])
+      .then(([vRes, dRes, tRes]) => {
         setVehicles(vRes.data.filter(v => v.status !== 'RETIRED'));
         setDrivers(dRes.data);
+        const active = tRes.data.filter(t => t.status === 'IN_PROGRESS');
+        setBusyVehicleIds(active.map(t => t.vehicle_id));
+        setBusyDriverIds(active.map(t => t.driver_id));
       });
   }, []);
 
@@ -210,11 +301,15 @@ function TripForm({ onSuccess, onCancel }) {
                 value={form.vehicle_id}
                 onChange={e => setForm({ ...form, vehicle_id: e.target.value })}>
                 <option value="">-- เลือกรถ --</option>
-                {vehicles.map(v => (
-                  <option key={v.id} value={v.id}>
-                    {v.license_plate} — {v.brand} {v.model} ({v.status})
-                  </option>
-                ))}
+                {vehicles.map(v => {
+                  const busy = busyVehicleIds.includes(v.id);
+                  return (
+                    <option key={v.id} value={v.id} disabled={busy}>
+                      {v.license_plate} — {v.brand} {v.model} ({v.status})
+                      {busy ? ' 🔴 กำลังวิ่งอยู่' : ''}
+                    </option>
+                  );
+                })}
               </select>
             </div>
             <div style={styles.field}>
@@ -225,9 +320,12 @@ function TripForm({ onSuccess, onCancel }) {
                 <option value="">-- เลือกคนขับ --</option>
                 {drivers.map(d => {
                   const expired = new Date(d.license_expires_at) < new Date();
+                  const busy = busyDriverIds.includes(d.id);
                   return (
-                    <option key={d.id} value={d.id} disabled={expired}>
-                      {d.name} {expired ? '(ใบขับขี่หมดอายุ)' : ''}
+                    <option key={d.id} value={d.id} disabled={expired || busy}>
+                      {d.name}
+                      {expired ? ' (ใบขับขี่หมดอายุ)' : ''}
+                      {busy ? ' 🔴 กำลังวิ่งอยู่' : ''}
                     </option>
                   );
                 })}
@@ -261,8 +359,7 @@ function TripForm({ onSuccess, onCancel }) {
             ].map(([label, key]) => (
               <div key={key} style={styles.field}>
                 <label style={styles.label}>{label}</label>
-                <input style={styles.input}
-                  type="number"
+                <input style={styles.input} type="number"
                   value={form[key]}
                   onChange={e => setForm({ ...form, [key]: e.target.value })}
                   placeholder={label} />
@@ -293,9 +390,7 @@ function TripForm({ onSuccess, onCancel }) {
                       onClick={() => setForm({
                         ...form,
                         checkpoints: form.checkpoints.filter((_, j) => j !== i)
-                      })}>
-                      ลบ
-                    </button>
+                      })}>ลบ</button>
                   )}
                 </div>
                 <div style={{ marginBottom: 6 }}>
@@ -329,23 +424,15 @@ function TripForm({ onSuccess, onCancel }) {
         <div style={styles.btnRow}>
           <div style={{ display: 'flex', gap: 8 }}>
             {step > 1 && (
-              <button style={styles.secondaryBtn} onClick={() => setStep(s => s - 1)}>
-                ← Back
-              </button>
+              <button style={styles.secondaryBtn} onClick={() => setStep(s => s - 1)}>← Back</button>
             )}
             <button style={styles.secondaryBtn} onClick={onCancel}>Cancel</button>
           </div>
           {step < 3
-            ? <button style={styles.primaryBtn}
-                disabled={!validateStep()}
-                onClick={() => setStep(s => s + 1)}>
-                Next →
-              </button>
-            : <button style={styles.primaryBtn}
-                disabled={!validateStep() || submitting}
-                onClick={submit}>
-                {submitting ? 'กำลังสร้าง...' : 'Create Trip'}
-              </button>
+            ? <button style={styles.primaryBtn} disabled={!validateStep()}
+              onClick={() => setStep(s => s + 1)}>Next →</button>
+            : <button style={styles.primaryBtn} disabled={!validateStep() || submitting}
+              onClick={submit}>{submitting ? 'กำลังสร้าง...' : 'Create Trip'}</button>
           }
         </div>
       </div>
@@ -354,15 +441,15 @@ function TripForm({ onSuccess, onCancel }) {
 }
 
 // ── Checkpoint Tracker ────────────────────────────────
-function CheckpointTracker({ trip, checkpoints, setCheckpoints, onBack, showToast }) {
+function CheckpointTracker({ trip, checkpoints, setCheckpoints, onBack, showToast, onComplete }) {
   const [updating, setUpdating] = useState(null);
 
   const purposeIcon = {
-    FUEL:       <MdLocalGasStation size={18} color="#facc15" />,
-    REST:       <MdHotel           size={18} color="#a78bfa" />,
-    DELIVERY:   <MdInventory       size={18} color="#34d399" />,
-    PICKUP:     <MdMoveToInbox     size={18} color="#60a5fa" />,
-    INSPECTION: <MdSearch          size={18} color="#fb923c" />,
+    FUEL: <MdLocalGasStation size={18} color="#facc15" />,
+    REST: <MdHotel size={18} color="#a78bfa" />,
+    DELIVERY: <MdInventory size={18} color="#34d399" />,
+    PICKUP: <MdMoveToInbox size={18} color="#60a5fa" />,
+    INSPECTION: <MdSearch size={18} color="#fb923c" />,
   };
 
   const updateStatus = async (chk, newStatus) => {
@@ -370,7 +457,6 @@ function CheckpointTracker({ trip, checkpoints, setCheckpoints, onBack, showToas
     const prev = [...checkpoints];
 
     setCheckpoints(c => c.map(x => x.id === chk.id ? { ...x, status: newStatus } : x));
-
     await new Promise(r => setTimeout(r, 300 + Math.random() * 500));
 
     if (Math.random() < 0.3) {
@@ -382,7 +468,20 @@ function CheckpointTracker({ trip, checkpoints, setCheckpoints, onBack, showToas
 
     try {
       await api.patch(`/trips/checkpoints/${chk.id}/status`, { status: newStatus });
-      showToast('อัปเดตสถานะสำเร็จ');
+      showToast('อัปเดตสถานะสำเร็จ ✓');
+
+      if (newStatus === 'DEPARTED') {
+        const updated = checkpoints.map(x => x.id === chk.id ? { ...x, status: 'DEPARTED' } : x);
+        const sorted = [...updated].sort((a, b) => a.sequence - b.sequence);
+        const lastChk = sorted[sorted.length - 1];
+        const allDone = sorted.every(x => x.status === 'DEPARTED' || x.status === 'SKIPPED');
+
+        if (lastChk.id === chk.id && allDone) {
+          showToast('ถึง checkpoint สุดท้ายแล้ว — กำลัง Complete Trip...');
+          await new Promise(r => setTimeout(r, 800));
+          await onComplete();
+        }
+      }
     } catch (err) {
       setCheckpoints(prev);
       showToast(err.response?.data?.error?.message || 'เกิดข้อผิดพลาด', 'error');
@@ -413,12 +512,7 @@ function CheckpointTracker({ trip, checkpoints, setCheckpoints, onBack, showToas
                   {purposeIcon[c.purpose] || '📍'}
                 </span>
                 <span style={styles.trackerName}>{c.location_name}</span>
-                <span style={{
-                  ...styles.badge,
-                  background: 'var(--bg-surface)',
-                  color: CHECKPOINT_COLOR[c.status],
-                  fontWeight: 700,
-                }}>
+                <span style={{ ...styles.badge, background: 'var(--bg-surface)', color: CHECKPOINT_COLOR[c.status], fontWeight: 700 }}>
                   {c.status}
                 </span>
                 <span style={{ ...styles.badge, background: 'var(--bg-surface)', color: 'var(--text-secondary)' }}>
@@ -434,24 +528,21 @@ function CheckpointTracker({ trip, checkpoints, setCheckpoints, onBack, showToas
 
               <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
                 {c.status === 'PENDING' && (
-                  <button
-                    style={{ ...styles.trackBtn, background: '#2563eb', color: '#fff' }}
+                  <button style={{ ...styles.trackBtn, background: '#2563eb', color: '#fff' }}
                     disabled={updating === c.id}
                     onClick={() => updateStatus(c, 'ARRIVED')}>
                     {updating === c.id ? '...' : 'Mark Arrived'}
                   </button>
                 )}
                 {c.status === 'ARRIVED' && (
-                  <button
-                    style={{ ...styles.trackBtn, background: '#16a34a', color: '#fff' }}
+                  <button style={{ ...styles.trackBtn, background: '#16a34a', color: '#fff' }}
                     disabled={updating === c.id}
                     onClick={() => updateStatus(c, 'DEPARTED')}>
                     {updating === c.id ? '...' : 'Mark Departed'}
                   </button>
                 )}
                 {c.status === 'PENDING' && (
-                  <button
-                    style={styles.secondaryBtn}
+                  <button style={styles.secondaryBtn}
                     disabled={updating === c.id}
                     onClick={() => updateStatus(c, 'SKIPPED')}>
                     Skip
@@ -467,41 +558,43 @@ function CheckpointTracker({ trip, checkpoints, setCheckpoints, onBack, showToas
 }
 
 const styles = {
-  title:        { margin: 0, fontSize: 20, fontWeight: 700, color: 'var(--text-primary)' },
-  subtitle:     { margin: '4px 0 0', fontSize: 13, color: 'var(--text-muted)' },
-  center:       { textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' },
-  list:         { display: 'grid', gap: 8 },
-  card:         { background: 'var(--bg-surface)', borderRadius: 10, padding: '12px 16px', border: '1px solid var(--border)' },
-  cardRow:      { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
-  cardSub:      { fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 },
-  badge:        { fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 999, whiteSpace: 'nowrap' },
-  route:        { fontWeight: 600, fontSize: 14, flex: 1, color: 'var(--text-primary)' },
-  km:           { fontSize: 12, color: 'var(--text-secondary)' },
-  plate:        { fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'monospace' },
-  primaryBtn:   { padding: '8px 16px', background: '#1d4ed8', color: '#fff', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer' },
+  title: { margin: 0, fontSize: 20, fontWeight: 700, color: 'var(--text-primary)' },
+  subtitle: { margin: '4px 0 0', fontSize: 13, color: 'var(--text-muted)' },
+  center: { textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' },
+  list: { display: 'grid', gap: 8 },
+  card: { background: 'var(--bg-surface)', borderRadius: 10, padding: '12px 16px', border: '1px solid var(--border)' },
+  cardRow: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+  cardSub: { fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 },
+  badge: { fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 999, whiteSpace: 'nowrap' },
+  route: { fontWeight: 600, fontSize: 14, flex: 1, color: 'var(--text-primary)' },
+  km: { fontSize: 12, color: 'var(--text-secondary)' },
+  plate: { fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'monospace' },
+  primaryBtn: { padding: '8px 16px', background: '#1d4ed8', color: '#fff', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer' },
   secondaryBtn: { padding: '8px 16px', background: 'var(--bg-surface)', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 13, cursor: 'pointer' },
-  trackBtn:     { padding: '4px 12px', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', background: '#1d4ed8', color: '#fff' },
-  stepRow:      { display: 'flex', gap: 4, marginBottom: '1.5rem' },
-  stepDot:      { width: 28, height: 28, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, margin: '0 auto' },
-  stepTitle:    { margin: '0 0 1rem', fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' },
-  formCard:     { background: 'var(--bg-surface)', borderRadius: 10, padding: '1.5rem', border: '1px solid var(--border)', maxWidth: 520 },
-  field:        { marginBottom: '1rem' },
-  label:        { display: 'block', fontSize: 12, color: 'var(--text-secondary)', marginBottom: 4 },
-  input:        { width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)', fontSize: 13, boxSizing: 'border-box', outline: 'none', background: 'var(--bg-base)', color: 'var(--text-primary)' },
-  select:       { width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)', fontSize: 13, outline: 'none', background: 'var(--bg-base)', color: 'var(--text-primary)' },
-  chkBox:       { background: 'var(--bg-base)', borderRadius: 8, padding: '10px 12px', marginBottom: 8, border: '1px solid var(--border)' },
-  chkHeader:    { display: 'flex', justifyContent: 'space-between', marginBottom: 6 },
-  chkNum:       { fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' },
-  removeBtn:    { fontSize: 11, color: '#f87171', background: 'none', border: 'none', cursor: 'pointer' },
-  addChkBtn:    { width: '100%', padding: '8px', border: '1px dashed var(--border)', borderRadius: 6, background: 'transparent', fontSize: 13, cursor: 'pointer', color: 'var(--text-muted)', marginTop: 4 },
-  errorBox:     { background: 'rgba(220,38,38,0.15)', color: '#f87171', padding: '8px 12px', borderRadius: 6, fontSize: 13, margin: '1rem 0', border: '1px solid rgba(220,38,38,0.3)' },
-  btnRow:       { display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem' },
-  tracker:        { background: 'var(--bg-surface)', borderRadius: 10, padding: '1.5rem', border: '1px solid var(--border)', position: 'relative' },
-  trackerItem:    { display: 'flex', gap: 12, position: 'relative', marginBottom: 24 },
-  trackerLine:    { position: 'absolute', left: 10, top: 24, bottom: -24, width: 2, background: 'var(--border)', zIndex: 0 },
-  trackerDot:     { width: 20, height: 20, borderRadius: 10, flexShrink: 0, marginTop: 2, zIndex: 1 },
+  trackBtn: { padding: '4px 12px', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', background: '#1d4ed8', color: '#fff' },
+  filterBar: { display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: '1rem' },
+  filterBtn: { padding: '5px 12px', borderRadius: 999, fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all .15s' },
+  stepRow: { display: 'flex', gap: 4, marginBottom: '1.5rem' },
+  stepDot: { width: 28, height: 28, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, margin: '0 auto' },
+  stepTitle: { margin: '0 0 1rem', fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' },
+  formCard: { background: 'var(--bg-surface)', borderRadius: 10, padding: '1.5rem', border: '1px solid var(--border)', maxWidth: 520 },
+  field: { marginBottom: '1rem' },
+  label: { display: 'block', fontSize: 12, color: 'var(--text-secondary)', marginBottom: 4 },
+  input: { width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)', fontSize: 13, boxSizing: 'border-box', outline: 'none', background: 'var(--bg-base)', color: 'var(--text-primary)' },
+  select: { width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)', fontSize: 13, outline: 'none', background: 'var(--bg-base)', color: 'var(--text-primary)' },
+  chkBox: { background: 'var(--bg-base)', borderRadius: 8, padding: '10px 12px', marginBottom: 8, border: '1px solid var(--border)' },
+  chkHeader: { display: 'flex', justifyContent: 'space-between', marginBottom: 6 },
+  chkNum: { fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' },
+  removeBtn: { fontSize: 11, color: '#f87171', background: 'none', border: 'none', cursor: 'pointer' },
+  addChkBtn: { width: '100%', padding: '8px', border: '1px dashed var(--border)', borderRadius: 6, background: 'transparent', fontSize: 13, cursor: 'pointer', color: 'var(--text-muted)', marginTop: 4 },
+  errorBox: { background: 'rgba(220,38,38,0.15)', color: '#f87171', padding: '8px 12px', borderRadius: 6, fontSize: 13, margin: '1rem 0', border: '1px solid rgba(220,38,38,0.3)' },
+  btnRow: { display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem' },
+  tracker: { background: 'var(--bg-surface)', borderRadius: 10, padding: '1.5rem', border: '1px solid var(--border)', position: 'relative' },
+  trackerItem: { display: 'flex', gap: 12, position: 'relative', marginBottom: 24 },
+  trackerLine: { position: 'absolute', left: 10, top: 24, bottom: -24, width: 2, background: 'var(--border)', zIndex: 0 },
+  trackerDot: { width: 20, height: 20, borderRadius: 10, flexShrink: 0, marginTop: 2, zIndex: 1 },
   trackerContent: { flex: 1, background: 'var(--bg-base)', borderRadius: 8, padding: '10px 12px', border: '1px solid var(--border)' },
-  trackerHeader:  { display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 4 },
-  trackerName:    { fontWeight: 600, fontSize: 14, flex: 1, color: 'var(--text-primary)' },
-  trackerTime:    { fontSize: 11, color: 'var(--text-muted)' },
+  trackerHeader: { display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 4 },
+  trackerName: { fontWeight: 600, fontSize: 14, flex: 1, color: 'var(--text-primary)' },
+  trackerTime: { fontSize: 11, color: 'var(--text-muted)' },
 };

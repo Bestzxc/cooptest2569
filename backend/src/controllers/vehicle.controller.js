@@ -102,10 +102,17 @@ const createVehicle = async (req, res) => {
 // ── GET /vehicles ────────────────────────────────────
 const getVehicles = async (req, res) => {
   try {
-    // รับ query params สำหรับ filter
     const { status, type, driver_id } = req.query;
 
-    // สร้าง query แบบ dynamic ตาม filter ที่ส่งมา
+    // ── auto-update status เป็น MAINTENANCE เมื่อถึงกำหนด service ──
+    await db.query(`
+      UPDATE vehicles 
+      SET status = 'MAINTENANCE'
+      WHERE mileage_km >= next_service_km
+        AND status NOT IN ('MAINTENANCE', 'RETIRED', 'ACTIVE')
+    `);
+    // ────────────────────────────────────────────────────────────────
+
     let query = `
       SELECT v.*, d.name as driver_name 
       FROM vehicles v

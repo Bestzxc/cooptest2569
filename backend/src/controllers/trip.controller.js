@@ -11,11 +11,11 @@ const createTrip = async (req, res) => {
 
     // 1. validate
     const errors = {};
-    if (!vehicle_id)    errors.vehicle_id = 'จำเป็นต้องระบุ vehicle';
-    if (!driver_id)     errors.driver_id = 'จำเป็นต้องระบุ driver';
-    if (!origin)        errors.origin = 'จำเป็นต้องระบุต้นทาง';
-    if (!destination)   errors.destination = 'จำเป็นต้องระบุปลายทาง';
-    if (!distance_km)   errors.distance_km = 'จำเป็นต้องระบุระยะทาง';
+    if (!vehicle_id)      errors.vehicle_id      = 'จำเป็นต้องระบุ vehicle';
+    if (!driver_id)       errors.driver_id       = 'จำเป็นต้องระบุ driver';
+    if (!origin)          errors.origin          = 'จำเป็นต้องระบุต้นทาง';
+    if (!destination)     errors.destination     = 'จำเป็นต้องระบุปลายทาง';
+    if (!distance_km)     errors.distance_km     = 'จำเป็นต้องระบุระยะทาง';
     if (!cargo_weight_kg) errors.cargo_weight_kg = 'จำเป็นต้องระบุน้ำหนักสินค้า';
     if (checkpoints.length === 0) errors.checkpoints = 'ต้องมีอย่างน้อย 1 checkpoint';
 
@@ -27,8 +27,7 @@ const createTrip = async (req, res) => {
 
     // 2. เช็คว่า vehicle มี trip IN_PROGRESS อยู่แล้วไหม
     const [activeTrips] = await db.query(
-      `SELECT id FROM trips 
-       WHERE vehicle_id = ? AND status = 'IN_PROGRESS'`,
+      `SELECT id FROM trips WHERE vehicle_id = ? AND status = 'IN_PROGRESS'`,
       [vehicle_id]
     );
 
@@ -65,7 +64,7 @@ const createTrip = async (req, res) => {
       });
     }
 
-    // 4. สร้าง trip + checkpoints ใน transaction เดียวกัน
+    // 4. สร้าง trip + checkpoints + เปลี่ยน status รถ ใน transaction เดียวกัน
     const conn = await db.getConnection();
     try {
       await conn.beginTransaction();
@@ -75,7 +74,7 @@ const createTrip = async (req, res) => {
         `INSERT INTO trips 
           (id, vehicle_id, driver_id, status, origin, destination,
            distance_km, cargo_type, cargo_weight_kg, started_at)
-         VALUES (?, ?, ?, 'SCHEDULED', ?, ?, ?, ?, ?, NOW())`,
+         VALUES (?, ?, ?, 'IN_PROGRESS', ?, ?, ?, ?, ?, NOW())`,
         [tripId, vehicle_id, driver_id, origin, destination,
          distance_km, cargo_type || 'GENERAL', cargo_weight_kg]
       );
@@ -94,6 +93,12 @@ const createTrip = async (req, res) => {
         );
       }
 
+      // เปลี่ยนรถเป็น ACTIVE อัตโนมัติ
+      await conn.query(
+        `UPDATE vehicles SET status = 'ACTIVE' WHERE id = ?`,
+        [vehicle_id]
+      );
+
       // audit log
       await conn.query(
         `INSERT INTO audit_logs (id, user_id, action, resource_type, resource_id, ip_address, result)
@@ -103,7 +108,6 @@ const createTrip = async (req, res) => {
 
       await conn.commit();
 
-      // ดึงข้อมูล trip + checkpoints กลับมา
       const [trip] = await db.query('SELECT * FROM trips WHERE id = ?', [tripId]);
       const [chks] = await db.query(
         'SELECT * FROM checkpoints WHERE trip_id = ? ORDER BY sequence',
@@ -158,7 +162,7 @@ const getTrips = async (req, res) => {
   }
 };
 
-// GET /trips/:id/checkpoints
+// ── GET /trips/:id/checkpoints ───────────────────────
 const getTripCheckpoints = async (req, res) => {
   try {
     const [rows] = await db.query(
@@ -211,35 +215,36 @@ const completeTrip = async (req, res) => {
       [trip.id]
     );
 
-    // 3. อัปเดต mileage_km ของรถ (ใน transaction เดียวกัน)
+    // 3. อัปเดต mileage_km ของรถ
     await conn.query(
-      `UPDATE vehicles 
-       SET mileage_km = mileage_km + ?
-       WHERE id = ?`,
+      `UPDATE vehicles SET mileage_km = mileage_km + ? WHERE id = ?`,
       [trip.distance_km, trip.vehicle_id]
     );
 
-    // 4. เช็คว่า mileage ใหม่เกิน next_service_km ไหม
+    // 4. ดึงข้อมูลรถล่าสุดหลัง update
     const [vehicles] = await conn.query(
       'SELECT * FROM vehicles WHERE id = ?',
       [trip.vehicle_id]
     );
-
     const vehicle = vehicles[0];
 
     if (vehicle.mileage_km >= vehicle.next_service_km) {
-      // เปลี่ยน status รถเป็น MAINTENANCE
+      // mileage เกิน → เปลี่ยนเป็น MAINTENANCE + สร้าง maintenance record
       await conn.query(
         `UPDATE vehicles SET status = 'MAINTENANCE' WHERE id = ?`,
         [vehicle.id]
       );
-
-      // สร้าง maintenance record อัตโนมัติ (ใน transaction เดียวกัน!)
       await conn.query(
         `INSERT INTO maintenance
           (id, vehicle_id, status, type, scheduled_at, mileage_at_service, notes)
          VALUES (?, ?, 'SCHEDULED', 'OIL_CHANGE', NOW(), ?, 'Auto-created: mileage เกิน next_service_km')`,
         [uuidv4(), vehicle.id, vehicle.mileage_km]
+      );
+    } else {
+      // mileage ยังไม่เกิน → รถกลับเป็น IDLE
+      await conn.query(
+        `UPDATE vehicles SET status = 'IDLE' WHERE id = ?`,
+        [vehicle.id]
       );
     }
 
@@ -256,7 +261,7 @@ const completeTrip = async (req, res) => {
       message: 'Trip completed สำเร็จ',
       vehicle_status: vehicle.mileage_km >= vehicle.next_service_km
         ? 'MAINTENANCE (mileage เกิน next_service_km)'
-        : vehicle.status
+        : 'IDLE'
     });
 
   } catch (err) {
@@ -286,7 +291,6 @@ const updateCheckpointStatus = async (req, res) => {
       });
     }
 
-    // ดึง checkpoint ปัจจุบัน
     const [chks] = await db.query(
       'SELECT * FROM checkpoints WHERE id = ?',
       [req.params.id]
@@ -300,7 +304,7 @@ const updateCheckpointStatus = async (req, res) => {
 
     const chk = chks[0];
 
-    // เช็ค ARRIVED ต้องมาก่อน DEPARTED
+    // ARRIVED ต้องมาก่อน DEPARTED
     if (status === 'DEPARTED' && chk.status !== 'ARRIVED') {
       return res.status(400).json({
         error: {
@@ -311,11 +315,10 @@ const updateCheckpointStatus = async (req, res) => {
       });
     }
 
-    // เช็ค sequence — checkpoint ก่อนหน้าต้องเสร็จก่อน
+    // เช็ค sequence
     if (chk.sequence > 1) {
       const [prevChk] = await db.query(
-        `SELECT * FROM checkpoints 
-         WHERE trip_id = ? AND sequence = ?`,
+        `SELECT * FROM checkpoints WHERE trip_id = ? AND sequence = ?`,
         [chk.trip_id, chk.sequence - 1]
       );
 
@@ -337,23 +340,15 @@ const updateCheckpointStatus = async (req, res) => {
       }
     }
 
-    // อัปเดต status
-    const updateFields = status === 'ARRIVED'
-      ? 'status = ?, arrived_at = NOW()'
-      : status === 'DEPARTED'
-      ? 'status = ?, departed_at = NOW()'
-      : 'status = ?';
-
-    const updateParams = status === 'ARRIVED' || status === 'DEPARTED'
-      ? [status, req.params.id]
-      : [status, req.params.id];
+    const updateFields = status === 'ARRIVED'  ? 'status = ?, arrived_at = NOW()'
+                       : status === 'DEPARTED' ? 'status = ?, departed_at = NOW()'
+                       : 'status = ?';
 
     await db.query(
       `UPDATE checkpoints SET ${updateFields} WHERE id = ?`,
-      updateParams
+      [status, req.params.id]
     );
 
-    // audit log
     await db.query(
       `INSERT INTO audit_logs (id, user_id, action, resource_type, resource_id, ip_address, result)
        VALUES (?, ?, 'UPDATE_CHECKPOINT', 'checkpoint', ?, ?, 'SUCCESS')`,
@@ -374,7 +369,8 @@ const updateCheckpointStatus = async (req, res) => {
     });
   }
 };
-// GET /maintenance
+
+// ── GET /maintenance ─────────────────────────────────
 const getMaintenance = async (req, res) => {
   try {
     const [rows] = await db.query(`
@@ -391,4 +387,55 @@ const getMaintenance = async (req, res) => {
   }
 };
 
-module.exports = { createTrip, getTrips, completeTrip, updateCheckpointStatus, getTripCheckpoints, getMaintenance };
+// ── DELETE /trips/:id (ADMIN only) ──────────────────
+const deleteTrip = async (req, res) => {
+  try {
+    const [trips] = await db.query(
+      'SELECT * FROM trips WHERE id = ?',
+      [req.params.id]
+    );
+
+    if (trips.length === 0) {
+      return res.status(404).json({
+        error: { code: 'NOT_FOUND', message: 'ไม่พบ trip', details: {} }
+      });
+    }
+
+    const trip = trips[0];
+
+    // ลบไม่ได้ถ้า IN_PROGRESS
+    if (trip.status === 'IN_PROGRESS') {
+      return res.status(400).json({
+        error: {
+          code: 'TRIP_ACTIVE',
+          message: 'ไม่สามารถลบ trip ที่กำลัง IN_PROGRESS ได้',
+          details: { status: trip.status }
+        }
+      });
+    }
+
+    // ลบ checkpoints ก่อน แล้วค่อยลบ trip
+    await db.query('DELETE FROM checkpoints WHERE trip_id = ?', [req.params.id]);
+    await db.query('DELETE FROM trips WHERE id = ?', [req.params.id]);
+
+    await db.query(
+      `INSERT INTO audit_logs (id, user_id, action, resource_type, resource_id, ip_address, result)
+       VALUES (?, ?, 'DELETE_TRIP', 'trip', ?, ?, 'SUCCESS')`,
+      [uuidv4(), req.user.userId, req.params.id, req.ip]
+    );
+
+    res.json({ message: 'ลบ trip สำเร็จ' });
+
+  } catch (err) {
+    console.error('Delete trip error:', err);
+    res.status(500).json({
+      error: { code: 'INTERNAL_ERROR', message: 'เกิดข้อผิดพลาด', details: {} }
+    });
+  }
+};
+
+module.exports = {
+  createTrip, getTrips, completeTrip,
+  updateCheckpointStatus, getTripCheckpoints,
+  getMaintenance, deleteTrip
+};

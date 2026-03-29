@@ -23,10 +23,10 @@ export default function Toast({ toast, onHide }) {
   if (!toast) return null;
 
   const config = {
-  success: { bg:'rgba(16,185,129,0.15)', border:'rgba(16,185,129,0.4)', color:'#34d399', icon:<MdCheckCircle size={16}/> },
-  error:   { bg:'rgba(239,68,68,0.15)',  border:'rgba(239,68,68,0.4)',  color:'#f87171', icon:<MdError       size={16}/> },
-  warning: { bg:'rgba(245,158,11,0.15)', border:'rgba(245,158,11,0.4)', color:'#fbbf24', icon:<MdWarning     size={16}/> },
-};
+    success: { bg: 'rgba(16,185,129,0.15)', border: 'rgba(16,185,129,0.4)', color: '#34d399', icon: <MdCheckCircle size={16} /> },
+    error: { bg: 'rgba(239,68,68,0.15)', border: 'rgba(239,68,68,0.4)', color: '#f87171', icon: <MdError size={16} /> },
+    warning: { bg: 'rgba(245,158,11,0.15)', border: 'rgba(245,158,11,0.4)', color: '#fbbf24', icon: <MdWarning size={16} /> },
+  };
 
   const c = config[toast.type] || config.success;
 

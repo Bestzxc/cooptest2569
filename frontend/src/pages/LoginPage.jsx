@@ -6,10 +6,10 @@ import api from '../services/api';
 export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError]       = useState('');
-  const [loading, setLoading]   = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const { login } = useAuth();
-  const navigate  = useNavigate();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,19 +28,19 @@ export default function LoginPage() {
   return (
     <div style={s.page}>
       {/* Background grid */}
-      <div style={s.grid}/>
+      <div style={s.grid} />
 
       <div style={s.card}>
         {/* Logo */}
         <div style={s.logoRow}>
           <span style={s.logoIcon}>⬡</span>
           <div>
-            <div style={s.logoText}>FLEET HQ</div>
+            <div style={s.logoText}>THE DRIVER</div>
             <div style={s.logoSub}>Fleet Management Platform</div>
           </div>
         </div>
 
-        <div style={s.divider}/>
+        <div style={s.divider} />
 
         {/* Form */}
         <form onSubmit={handleSubmit}>
@@ -92,14 +92,14 @@ const s = {
     padding: '2rem', width: 380,
     boxShadow: '0 0 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(0,212,255,0.05)',
   },
-  logoRow:  { display: 'flex', alignItems: 'center', gap: 12, marginBottom: '1.25rem' },
+  logoRow: { display: 'flex', alignItems: 'center', gap: 12, marginBottom: '1.25rem' },
   logoIcon: { fontSize: 28, color: 'var(--accent)', filter: 'drop-shadow(0 0 10px rgba(0,212,255,0.7))' },
   logoText: { fontWeight: 800, fontSize: 18, letterSpacing: 3, fontFamily: 'var(--font-display)' },
-  logoSub:  { fontSize: 11, color: 'var(--text-muted)', letterSpacing: 1 },
-  divider:  { height: 1, background: 'var(--border)', margin: '0 0 1.5rem' },
-  field:    { marginBottom: '1rem' },
-  label:    { display: 'block', fontSize: 10, letterSpacing: 2, color: 'var(--text-muted)', marginBottom: 6, fontWeight: 600 },
-  error:    {
+  logoSub: { fontSize: 11, color: 'var(--text-muted)', letterSpacing: 1 },
+  divider: { height: 1, background: 'var(--border)', margin: '0 0 1.5rem' },
+  field: { marginBottom: '1rem' },
+  label: { display: 'block', fontSize: 10, letterSpacing: 2, color: 'var(--text-muted)', marginBottom: 6, fontWeight: 600 },
+  error: {
     background: 'rgba(239,68,68,0.1)',
     border: '1px solid rgba(239,68,68,0.3)',
     color: '#f87171', padding: '8px 12px',

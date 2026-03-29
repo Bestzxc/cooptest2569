@@ -4,22 +4,22 @@ import api from '../services/api';
 import { MdLocalShipping, MdBuild, MdPerson, MdMap, MdRefresh } from 'react-icons/md';
 
 const SEVERITY_STYLE = {
-  CRITICAL: { bg: 'rgba(220,38,38,0.15)',  text: '#f87171', dot: '#f87171' },
-  WARNING:  { bg: 'rgba(234,179,8,0.15)',  text: '#facc15', dot: '#facc15' },
+  CRITICAL: { bg: 'rgba(220,38,38,0.15)', text: '#f87171', dot: '#f87171' },
+  WARNING: { bg: 'rgba(234,179,8,0.15)', text: '#facc15', dot: '#facc15' },
 };
 
 const RESOURCE_ICON = {
-  vehicle:     <MdLocalShipping size={20} color="#00d4ff" />,
-  maintenance: <MdBuild         size={20} color="#fb923c" />,
-  driver:      <MdPerson        size={20} color="#a78bfa" />,
-  trip:        <MdMap           size={20} color="#34d399" />,
+  vehicle: <MdLocalShipping size={20} color="#00d4ff" />,
+  maintenance: <MdBuild size={20} color="#fb923c" />,
+  driver: <MdPerson size={20} color="#a78bfa" />,
+  trip: <MdMap size={20} color="#34d399" />,
 };
 
 export default function AlertsPage() {
-  const [alerts, setAlerts]       = useState([]);
-  const [loading, setLoading]     = useState(true);
+  const [alerts, setAlerts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [fSeverity, setFSeverity] = useState('ALL');
-  const [fType, setFType]         = useState('ALL');
+  const [fType, setFType] = useState('ALL');
 
   useEffect(() => {
     fetchAlerts();
@@ -44,7 +44,7 @@ export default function AlertsPage() {
   });
 
   const criticalCount = alerts.filter(a => a.severity === 'CRITICAL').length;
-  const warningCount  = alerts.filter(a => a.severity === 'WARNING').length;
+  const warningCount = alerts.filter(a => a.severity === 'WARNING').length;
 
   return (
     <Layout>
@@ -171,24 +171,24 @@ export default function AlertsPage() {
 }
 
 const styles = {
-  title:       { margin: 0, fontSize: 20, fontWeight: 700, color: 'var(--text-primary)' },
-  subtitle:    { margin: '4px 0 0', fontSize: 13, color: 'var(--text-muted)' },
-  center:      { textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' },
+  title: { margin: 0, fontSize: 20, fontWeight: 700, color: 'var(--text-primary)' },
+  subtitle: { margin: '4px 0 0', fontSize: 13, color: 'var(--text-muted)' },
+  center: { textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' },
 
-  summaryRow:  { display: 'flex', gap: 10, marginBottom: '1rem' },
+  summaryRow: { display: 'flex', gap: 10, marginBottom: '1rem' },
   summaryCard: { borderRadius: 8, padding: '12px 20px', textAlign: 'center', minWidth: 80 },
 
-  filterBar:  {
+  filterBar: {
     display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap',
     background: 'var(--bg-surface)', padding: '12px', borderRadius: 8,
     border: '1px solid var(--border)', marginBottom: '1rem',
   },
-  select:     {
+  select: {
     padding: '7px 10px', borderRadius: 6,
     border: '1px solid var(--border)', fontSize: 13,
     outline: 'none', background: 'var(--bg-base)', color: 'var(--text-primary)',
   },
-  count:      { fontSize: 12, color: 'var(--text-muted)' },
+  count: { fontSize: 12, color: 'var(--text-muted)' },
   refreshBtn: {
     marginLeft: 'auto', padding: '6px 12px',
     border: '1px solid var(--border)', borderRadius: 6,
@@ -197,15 +197,15 @@ const styles = {
     display: 'flex', alignItems: 'center', gap: 4,
   },
 
-  list:    { display: 'grid', gap: 8, marginBottom: '1rem' },
-  card:    {
+  list: { display: 'grid', gap: 8, marginBottom: '1rem' },
+  card: {
     background: 'var(--bg-surface)', borderRadius: 8,
     padding: '12px 16px', border: '1px solid var(--border)',
   },
   cardRow: { display: 'flex', alignItems: 'center', gap: 12 },
   message: { fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 4 },
-  meta:    { fontSize: 11, color: 'var(--text-muted)' },
-  badge:   { fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 999, whiteSpace: 'nowrap' },
+  meta: { fontSize: 11, color: 'var(--text-muted)' },
+  badge: { fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 999, whiteSpace: 'nowrap' },
 
   emptyBox: {
     background: 'rgba(22,163,74,0.08)', color: '#4ade80',
@@ -214,12 +214,12 @@ const styles = {
     marginBottom: '1rem',
   },
 
-  rulesBox:   {
+  rulesBox: {
     background: 'var(--bg-surface)', borderRadius: 8,
     padding: '12px 16px', border: '1px solid var(--border)',
     marginTop: '1rem',
   },
   rulesTitle: { fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 },
-  ruleItem:   { fontSize: 12, color: 'var(--text-muted)', padding: '4px 0', borderBottom: '1px solid var(--border)' },
-  ruleNum:    { fontWeight: 600, color: 'var(--text-secondary)' },
+  ruleItem: { fontSize: 12, color: 'var(--text-muted)', padding: '4px 0', borderBottom: '1px solid var(--border)' },
+  ruleNum: { fontWeight: 600, color: 'var(--text-secondary)' },
 };

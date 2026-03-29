@@ -1,21 +1,23 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import Layout from '../components/Layout';
 import api from '../services/api';
 
 const STATUS_COLORS = {
-  ACTIVE:      '#4ade80',
-  IDLE:        '#facc15',
+  ACTIVE: '#4ade80',
+  IDLE: '#facc15',
   MAINTENANCE: '#fb923c',
-  RETIRED:     '#94a3b8',
+  RETIRED: '#94a3b8',
 };
 
 export default function DashboardPage() {
-  const [vehicles, setVehicles]     = useState([]);
-  const [trips, setTrips]           = useState([]);
-  const [alerts, setAlerts]         = useState([]);
+  const [vehicles, setVehicles] = useState([]);
+  const [trips, setTrips] = useState([]);
+  const [alerts, setAlerts] = useState([]);
   const [barData, setBarData] = useState([]);
-  const [loading, setLoading]       = useState(true);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -39,7 +41,6 @@ export default function DashboardPage() {
     fetchAll();
   }, []);
 
-  // คำนวณ metric
   const activeTrips = trips.filter(t => t.status === 'IN_PROGRESS').length;
   const totalDistToday = trips
     .filter(t => {
@@ -49,12 +50,10 @@ export default function DashboardPage() {
     .reduce((sum, t) => sum + Number(t.distance_km), 0);
   const overdueCount = alerts.filter(a => a.rule_id === 'OVERDUE_MAINTENANCE').length;
 
-  // ข้อมูลสำหรับ Pie chart
   const pieData = ['ACTIVE', 'IDLE', 'MAINTENANCE', 'RETIRED'].map(s => ({
     name: s,
     value: vehicles.filter(v => v.status === s).length,
   })).filter(d => d.value > 0);
-
 
   if (loading) return <Layout><div style={styles.center}>กำลังโหลด...</div></Layout>;
 
@@ -71,30 +70,32 @@ export default function DashboardPage() {
           label="Total Vehicles"
           value={vehicles.length}
           sub={`${vehicles.filter(v => v.status !== 'RETIRED').length} active fleet`}
+          onClick={() => navigate('/vehicles')}
         />
         <MetricCard
           label="Active Trips"
           value={activeTrips}
           sub="IN_PROGRESS ขณะนี้"
           accent="#2563eb"
+          onClick={() => navigate('/trips')}
         />
         <MetricCard
           label="Distance Today"
           value={`${totalDistToday.toLocaleString()} km`}
           sub="trips วันนี้รวมกัน"
+          onClick={() => navigate('/trips')}
         />
         <MetricCard
           label="Maintenance Overdue"
           value={overdueCount}
           sub="เลยกำหนดมากกว่า 3 วัน"
           accent={overdueCount > 0 ? '#dc2626' : undefined}
+          onClick={() => navigate('/maintenance')}
         />
       </div>
 
       {/* Charts */}
       <div style={styles.chartsGrid}>
-
-        {/* Pie Chart */}
         <div style={styles.chartCard}>
           <div style={styles.chartTitle}>Vehicles by Status</div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
@@ -120,7 +121,6 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Bar Chart */}
         <div style={styles.chartCard}>
           <div style={styles.chartTitle}>Trip Distance — 7 วันล่าสุด (km)</div>
           <div style={{ height: 220 }}>
@@ -138,9 +138,7 @@ export default function DashboardPage() {
 
       {/* Alerts Panel */}
       <div style={styles.alertCard}>
-        <div style={styles.chartTitle}>
-          Alerts ({alerts.length})
-        </div>
+        <div style={styles.chartTitle}>Alerts ({alerts.length})</div>
         {alerts.length === 0
           ? <div style={styles.noAlert}>✓ ไม่มี alert ขณะนี้</div>
           : alerts.slice(0, 5).map((a, i) => (
@@ -162,9 +160,23 @@ export default function DashboardPage() {
 }
 
 // ── Metric Card Component ─────────────────────────────
-function MetricCard({ label, value, sub, accent }) {
+function MetricCard({ label, value, sub, accent, onClick }) {
+  const [hovered, setHovered] = useState(false);
+
   return (
-    <div style={styles.metricCard}>
+    <div
+      style={{
+        ...styles.metricCard,
+        cursor: 'pointer',
+        borderColor: hovered ? (accent || '#00d4ff') : 'var(--border)',
+        transform: hovered ? 'translateY(-2px)' : 'translateY(0)',
+        boxShadow: hovered ? `0 4px 20px ${accent ? accent + '33' : 'rgba(0,212,255,0.15)'}` : 'none',
+        transition: 'border-color .2s, transform .2s, box-shadow .2s',
+      }}
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
       <div style={styles.metricLabel}>{label}</div>
       <div style={{ ...styles.metricValue, color: accent || 'var(--text-primary)' }}>
         {value}
@@ -175,40 +187,39 @@ function MetricCard({ label, value, sub, accent }) {
 }
 
 const styles = {
-  title:       { margin: 0, fontSize: 22, fontWeight: 800, fontFamily: 'var(--font-display)', letterSpacing: 1 },
-  subtitle:    { margin: '4px 0 0', fontSize: 12, color: 'var(--text-secondary)' },
-  center:      { textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' },
+  title: { margin: 0, fontSize: 22, fontWeight: 800, fontFamily: 'var(--font-display)', letterSpacing: 1 },
+  subtitle: { margin: '4px 0 0', fontSize: 12, color: 'var(--text-secondary)' },
+  center: { textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' },
   metricsGrid: { display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: '1.25rem' },
-  metricCard:  {
+  metricCard: {
     background: 'var(--bg-surface)',
     border: '1px solid var(--border)',
     borderRadius: 'var(--radius-md)',
     padding: '1.1rem 1.25rem',
-    transition: 'border-color .2s',
   },
   metricLabel: { fontSize: 12, letterSpacing: 1, color: 'var(--text-muted)', marginBottom: 6, fontWeight: 600 },
   metricValue: { fontSize: 32, fontWeight: 700, fontFamily: 'var(--font-mono)', letterSpacing: -1 },
-  metricSub:   { fontSize: 12, color: 'var(--text-muted)', marginTop: 4 },
+  metricSub: { fontSize: 12, color: 'var(--text-muted)', marginTop: 4 },
+  metricHint: { fontSize: 11, color: 'var(--text-secondary)', marginTop: 8, opacity: 0.8 },
 
-  chartsGrid:  { display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '1rem', marginBottom: '1rem' },
-  chartCard:   {
+  chartsGrid: { display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '1rem', marginBottom: '1rem' },
+  chartCard: {
     background: 'var(--bg-surface)',
     border: '1px solid var(--border)',
     borderRadius: 'var(--radius-md)',
     padding: '1.1rem 1.25rem',
   },
-  chartTitle:  { fontSize: 13, fontWeight: 600, letterSpacing: 1, color: 'var(--text-secondary)', marginBottom: 10 },
-  legend:      { display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--text-secondary)' },
-  legendDot:   { width: 8, height: 8, borderRadius: 2, display: 'inline-block' },
-  alertCard:   {
+  chartTitle: { fontSize: 13, fontWeight: 600, letterSpacing: 1, color: 'var(--text-secondary)', marginBottom: 10 },
+  legend: { display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--text-secondary)' },
+  legendDot: { width: 8, height: 8, borderRadius: 2, display: 'inline-block' },
+  alertCard: {
     background: 'var(--bg-surface)',
     border: '1px solid var(--border)',
     borderRadius: 'var(--radius-md)',
     padding: '1.1rem 1.25rem',
   },
-  alertRow:    { display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid var(--border)' },
+  alertRow: { display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid var(--border)' },
   severityBadge: { fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 4, letterSpacing: 1 },
-  alertMsg:    { fontSize: 14, color: 'var(--text-primary)' },
-  noAlert:     { fontSize: 14, color: 'var(--success)', padding: '8px 0' },
-  
+  alertMsg: { fontSize: 14, color: 'var(--text-primary)' },
+  noAlert: { fontSize: 14, color: 'var(--success)', padding: '8px 0' },
 };
