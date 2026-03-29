@@ -7,12 +7,14 @@ import {
   MdBuild,
   MdNotifications,
   MdAssignment,
-  MdLogout
+  MdLogout,
+  MdPerson,
 } from 'react-icons/md';
 
 const NAV = [
   { path: '/',            icon: <MdDashboard />,     label: 'Dashboard'  },
   { path: '/vehicles',    icon: <MdLocalShipping />,  label: 'Vehicles'   },
+  { path: '/drivers',     icon: <MdPerson />,         label: 'Drivers'     },
   { path: '/trips',       icon: <MdMap />,            label: 'Trips'      },
   { path: '/maintenance', icon: <MdBuild />,          label: 'Maintenance'},
   { path: '/alerts',      icon: <MdNotifications />,  label: 'Alerts', badge: 0 },
@@ -34,7 +36,7 @@ export default function Layout({ children }) {
         <div style={s.logoArea}>
           <div style={s.logoIcon}>⬡</div>
           <div>
-            <div style={s.logoText}>FLEET HQ</div>
+            <div style={s.logoText}>THE DRIVER</div>
             <div style={s.logoSub}>Control Center</div>
           </div>
         </div>

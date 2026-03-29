@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import api from '../services/api';
-import { MdPerson } from 'react-icons/md';
+import ProvinceInput from '../components/ProvinceInput';
+import Toast, { useToast } from '../components/Toast';
+import { MdPerson, MdLocalGasStation, MdHotel, MdInventory, MdMoveToInbox, MdSearch } from 'react-icons/md';
 
 const STATUS_COLOR = {
   SCHEDULED:   { bg: 'rgba(109,40,217,0.15)',  text: '#a78bfa' },
@@ -18,15 +20,14 @@ const CHECKPOINT_COLOR = {
 };
 
 export default function TripsPage() {
-  const [view, setView] = useState('list'); // list | create | tracker
+  const [view, setView] = useState('list');
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
   const [trackerTrip, setTrackerTrip] = useState(null);
   const [checkpoints, setCheckpoints] = useState([]);
+  const { toast, showToast, hideToast } = useToast();
 
-  useEffect(() => {
-    fetchTrips();
-  }, []);
+  useEffect(() => { fetchTrips(); }, []);
 
   const fetchTrips = async () => {
     try {
@@ -63,67 +64,71 @@ export default function TripsPage() {
 
   if (view === 'tracker' && trackerTrip) {
     return (
-      <Layout>
-        <CheckpointTracker
-          trip={trackerTrip}
-          checkpoints={checkpoints}
-          setCheckpoints={setCheckpoints}
-          onBack={() => setView('list')}
-        />
-      </Layout>
+      <>
+        <Layout>
+          <CheckpointTracker
+            trip={trackerTrip}
+            checkpoints={checkpoints}
+            setCheckpoints={setCheckpoints}
+            onBack={() => setView('list')}
+            showToast={showToast}
+          />
+        </Layout>
+        <Toast toast={toast} onHide={hideToast} />
+      </>
     );
   }
 
   return (
-    <Layout>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <div>
-          <h1 style={styles.title}>Trips</h1>
-          <p style={styles.subtitle}>ติดตามและจัดการเส้นทาง</p>
-        </div>
-        <button style={styles.primaryBtn} onClick={() => setView('create')}>
-          + New Trip
-        </button>
-      </div>
-
-      {loading
-        ? <div style={styles.center}>กำลังโหลด...</div>
-        : <div style={styles.list}>
-            {trips.length === 0
-              ? <div style={styles.center}>ยังไม่มี trip</div>
-              : trips.map(t => {
-                  const sc = STATUS_COLOR[t.status] || STATUS_COLOR.SCHEDULED;
-                  return (
-                    <div key={t.id} style={styles.card}>
-                      <div style={styles.cardRow}>
-                        <span style={{ ...styles.badge, background: sc.bg, color: sc.text }}>
-                          {t.status}
-                        </span>
-                        <span style={styles.route}>
-                          {t.origin} → {t.destination}
-                        </span>
-                        <span style={styles.km}>{Number(t.distance_km).toLocaleString()} km</span>
-                        <span style={styles.plate}>{t.license_plate}</span>
-                        {(t.status === 'IN_PROGRESS' || t.status === 'SCHEDULED') && (
-                          <button
-                            style={styles.trackBtn}
-                            onClick={() => openTracker(t)}
-                          >
-                            Track
-                          </button>
-                        )}
-                      </div>
-                      <div style={styles.cardSub}>
-                        <MdPerson size={12} style={{ verticalAlign: 'middle' }} />
-                        {t.driver_name} · {new Date(t.started_at).toLocaleDateString('th-TH')} · {t.cargo_type}
-                      </div>
-                    </div>
-                  );
-                })
-            }
+    <>
+      <Layout>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+          <div>
+            <h1 style={styles.title}>Trips</h1>
+            <p style={styles.subtitle}>ติดตามและจัดการเส้นทาง</p>
           </div>
-      }
-    </Layout>
+          <button style={styles.primaryBtn} onClick={() => setView('create')}>
+            + New Trip
+          </button>
+        </div>
+
+        {loading
+          ? <div style={styles.center}>กำลังโหลด...</div>
+          : <div style={styles.list}>
+              {trips.length === 0
+                ? <div style={styles.center}>ยังไม่มี trip</div>
+                : trips.map(t => {
+                    const sc = STATUS_COLOR[t.status] || STATUS_COLOR.SCHEDULED;
+                    return (
+                      <div key={t.id} style={styles.card}>
+                        <div style={styles.cardRow}>
+                          <span style={{ ...styles.badge, background: sc.bg, color: sc.text }}>
+                            {t.status}
+                          </span>
+                          <span style={styles.route}>
+                            {t.origin} → {t.destination}
+                          </span>
+                          <span style={styles.km}>{Number(t.distance_km).toLocaleString()} km</span>
+                          <span style={styles.plate}>{t.license_plate}</span>
+                          {(t.status === 'IN_PROGRESS' || t.status === 'SCHEDULED') && (
+                            <button style={styles.trackBtn} onClick={() => openTracker(t)}>
+                              Track
+                            </button>
+                          )}
+                        </div>
+                        <div style={styles.cardSub}>
+                          <MdPerson size={12} style={{ verticalAlign: 'middle' }} />
+                          {t.driver_name} · {new Date(t.started_at).toLocaleDateString('th-TH')} · {t.cargo_type}
+                        </div>
+                      </div>
+                    );
+                  })
+              }
+            </div>
+        }
+      </Layout>
+      <Toast toast={toast} onHide={hideToast} />
+    </>
   );
 }
 
@@ -182,22 +187,20 @@ function TripForm({ onSuccess, onCancel }) {
     <div>
       <h1 style={styles.title}>Create New Trip</h1>
 
-      {/* Step indicator */}
       <div style={styles.stepRow}>
         {[1, 2, 3].map(s => (
           <div key={s} style={{ flex: 1 }}>
             <div style={{
               ...styles.stepDot,
-              background: s <= step ? '#1d4ed8' : '#e2e8f0',
+              background: s <= step ? '#1d4ed8' : 'var(--border)',
               color: s <= step ? '#fff' : '#94a3b8',
             }}>{s}</div>
-            <div style={{ height: 4, background: s < step ? '#1d4ed8' : '#e2e8f0', marginTop: 4 }} />
+            <div style={{ height: 4, background: s < step ? '#1d4ed8' : 'var(--border)', marginTop: 4 }} />
           </div>
         ))}
       </div>
 
       <div style={styles.formCard}>
-        {/* Step 1 */}
         {step === 1 && (
           <div>
             <h3 style={styles.stepTitle}>1. เลือก Vehicle & Driver</h3>
@@ -233,19 +236,33 @@ function TripForm({ onSuccess, onCancel }) {
           </div>
         )}
 
-        {/* Step 2 */}
         {step === 2 && (
           <div>
             <h3 style={styles.stepTitle}>2. กำหนด Origin & Destination</h3>
+            <div style={styles.field}>
+              <label style={styles.label}>ต้นทาง</label>
+              <ProvinceInput
+                value={form.origin}
+                onChange={val => setForm({ ...form, origin: val })}
+                placeholder="พิมพ์จังหวัดต้นทาง..."
+              />
+            </div>
+            <div style={styles.field}>
+              <label style={styles.label}>ปลายทาง</label>
+              <ProvinceInput
+                value={form.destination}
+                onChange={val => setForm({ ...form, destination: val })}
+                placeholder="พิมพ์จังหวัดปลายทาง..."
+              />
+            </div>
             {[
-              ['origin', 'ต้นทาง'],
-              ['destination', 'ปลายทาง'],
-              ['distance_km', 'ระยะทาง (km)'],
-              ['cargo_weight_kg', 'น้ำหนักสินค้า (kg)'],
-            ].map(([key, label]) => (
+              ['ระยะทาง (km)', 'distance_km'],
+              ['น้ำหนักสินค้า (kg)', 'cargo_weight_kg'],
+            ].map(([label, key]) => (
               <div key={key} style={styles.field}>
                 <label style={styles.label}>{label}</label>
                 <input style={styles.input}
+                  type="number"
                   value={form[key]}
                   onChange={e => setForm({ ...form, [key]: e.target.value })}
                   placeholder={label} />
@@ -264,7 +281,6 @@ function TripForm({ onSuccess, onCancel }) {
           </div>
         )}
 
-        {/* Step 3 */}
         {step === 3 && (
           <div>
             <h3 style={styles.stepTitle}>3. เพิ่ม Checkpoints (อย่างน้อย 1 จุด)</h3>
@@ -282,10 +298,13 @@ function TripForm({ onSuccess, onCancel }) {
                     </button>
                   )}
                 </div>
-                <input style={{ ...styles.input, marginBottom: 6 }}
-                  placeholder="ชื่อสถานที่"
-                  value={c.location_name}
-                  onChange={e => updateChk(i, 'location_name', e.target.value)} />
+                <div style={{ marginBottom: 6 }}>
+                  <ProvinceInput
+                    value={c.location_name}
+                    onChange={val => updateChk(i, 'location_name', val)}
+                    placeholder="เลือกจังหวัด..."
+                  />
+                </div>
                 <select style={styles.select}
                   value={c.purpose}
                   onChange={e => updateChk(i, 'purpose', e.target.value)}>
@@ -307,7 +326,6 @@ function TripForm({ onSuccess, onCancel }) {
 
         {error && <div style={styles.errorBox}>{error}</div>}
 
-        {/* Buttons */}
         <div style={styles.btnRow}>
           <div style={{ display: 'flex', gap: 8 }}>
             {step > 1 && (
@@ -336,36 +354,38 @@ function TripForm({ onSuccess, onCancel }) {
 }
 
 // ── Checkpoint Tracker ────────────────────────────────
-function CheckpointTracker({ trip, checkpoints, setCheckpoints, onBack }) {
+function CheckpointTracker({ trip, checkpoints, setCheckpoints, onBack, showToast }) {
   const [updating, setUpdating] = useState(null);
 
   const purposeIcon = {
-    FUEL: '⛽', REST: '😴', DELIVERY: '📦', PICKUP: '🔼', INSPECTION: '🔍',
+    FUEL:       <MdLocalGasStation size={18} color="#facc15" />,
+    REST:       <MdHotel           size={18} color="#a78bfa" />,
+    DELIVERY:   <MdInventory       size={18} color="#34d399" />,
+    PICKUP:     <MdMoveToInbox     size={18} color="#60a5fa" />,
+    INSPECTION: <MdSearch          size={18} color="#fb923c" />,
   };
 
   const updateStatus = async (chk, newStatus) => {
     setUpdating(chk.id);
     const prev = [...checkpoints];
 
-    // optimistic update
     setCheckpoints(c => c.map(x => x.id === chk.id ? { ...x, status: newStatus } : x));
 
-    // simulate delay 300-800ms
     await new Promise(r => setTimeout(r, 300 + Math.random() * 500));
 
-    // fail 30%
     if (Math.random() < 0.3) {
-      setCheckpoints(prev); // rollback
-      alert(`❌ อัปเดตล้มเหลว — กรุณาลองใหม่อีกครั้ง\n(สถานะถูก rollback กลับเป็น ${chk.status})`);
+      setCheckpoints(prev);
+      showToast('อัปเดตล้มเหลว กรุณาลองใหม่อีกครั้ง', 'error');
       setUpdating(null);
       return;
     }
 
     try {
       await api.patch(`/trips/checkpoints/${chk.id}/status`, { status: newStatus });
+      showToast('อัปเดตสถานะสำเร็จ');
     } catch (err) {
       setCheckpoints(prev);
-      alert(err.response?.data?.error?.message || 'เกิดข้อผิดพลาด');
+      showToast(err.response?.data?.error?.message || 'เกิดข้อผิดพลาด', 'error');
     }
     setUpdating(null);
   };
@@ -385,16 +405,13 @@ function CheckpointTracker({ trip, checkpoints, setCheckpoints, onBack }) {
       <div style={styles.tracker}>
         {sorted.map((c, i) => (
           <div key={c.id} style={styles.trackerItem}>
-            {/* Line */}
             {i < sorted.length - 1 && <div style={styles.trackerLine} />}
-
-            {/* Dot */}
             <div style={{ ...styles.trackerDot, background: CHECKPOINT_COLOR[c.status] }} />
-
-            {/* Content */}
             <div style={styles.trackerContent}>
               <div style={styles.trackerHeader}>
-                <span style={{ fontSize: 18 }}>{purposeIcon[c.purpose] || '📍'}</span>
+                <span style={{ display: 'flex', alignItems: 'center' }}>
+                  {purposeIcon[c.purpose] || '📍'}
+                </span>
                 <span style={styles.trackerName}>{c.location_name}</span>
                 <span style={{
                   ...styles.badge,
@@ -415,7 +432,6 @@ function CheckpointTracker({ trip, checkpoints, setCheckpoints, onBack }) {
                 </div>
               )}
 
-              {/* Action buttons */}
               <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
                 {c.status === 'PENDING' && (
                   <button
@@ -455,41 +471,31 @@ const styles = {
   subtitle:     { margin: '4px 0 0', fontSize: 13, color: 'var(--text-muted)' },
   center:       { textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' },
   list:         { display: 'grid', gap: 8 },
-
   card:         { background: 'var(--bg-surface)', borderRadius: 10, padding: '12px 16px', border: '1px solid var(--border)' },
   cardRow:      { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
-  cardSub: { 
-    fontSize: 11, color: 'var(--text-muted)', marginTop: 4,
-    display: 'flex', alignItems: 'center', gap: 4,
-  },
+  cardSub:      { fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 },
   badge:        { fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 999, whiteSpace: 'nowrap' },
   route:        { fontWeight: 600, fontSize: 14, flex: 1, color: 'var(--text-primary)' },
   km:           { fontSize: 12, color: 'var(--text-secondary)' },
   plate:        { fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'monospace' },
-
   primaryBtn:   { padding: '8px 16px', background: '#1d4ed8', color: '#fff', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer' },
   secondaryBtn: { padding: '8px 16px', background: 'var(--bg-surface)', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 13, cursor: 'pointer' },
   trackBtn:     { padding: '4px 12px', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', background: '#1d4ed8', color: '#fff' },
-
   stepRow:      { display: 'flex', gap: 4, marginBottom: '1.5rem' },
   stepDot:      { width: 28, height: 28, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, margin: '0 auto' },
   stepTitle:    { margin: '0 0 1rem', fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' },
-
   formCard:     { background: 'var(--bg-surface)', borderRadius: 10, padding: '1.5rem', border: '1px solid var(--border)', maxWidth: 520 },
   field:        { marginBottom: '1rem' },
   label:        { display: 'block', fontSize: 12, color: 'var(--text-secondary)', marginBottom: 4 },
   input:        { width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)', fontSize: 13, boxSizing: 'border-box', outline: 'none', background: 'var(--bg-base)', color: 'var(--text-primary)' },
   select:       { width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)', fontSize: 13, outline: 'none', background: 'var(--bg-base)', color: 'var(--text-primary)' },
-
   chkBox:       { background: 'var(--bg-base)', borderRadius: 8, padding: '10px 12px', marginBottom: 8, border: '1px solid var(--border)' },
   chkHeader:    { display: 'flex', justifyContent: 'space-between', marginBottom: 6 },
   chkNum:       { fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' },
   removeBtn:    { fontSize: 11, color: '#f87171', background: 'none', border: 'none', cursor: 'pointer' },
   addChkBtn:    { width: '100%', padding: '8px', border: '1px dashed var(--border)', borderRadius: 6, background: 'transparent', fontSize: 13, cursor: 'pointer', color: 'var(--text-muted)', marginTop: 4 },
-
   errorBox:     { background: 'rgba(220,38,38,0.15)', color: '#f87171', padding: '8px 12px', borderRadius: 6, fontSize: 13, margin: '1rem 0', border: '1px solid rgba(220,38,38,0.3)' },
   btnRow:       { display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem' },
-
   tracker:        { background: 'var(--bg-surface)', borderRadius: 10, padding: '1.5rem', border: '1px solid var(--border)', position: 'relative' },
   trackerItem:    { display: 'flex', gap: 12, position: 'relative', marginBottom: 24 },
   trackerLine:    { position: 'absolute', left: 10, top: 24, bottom: -24, width: 2, background: 'var(--border)', zIndex: 0 },

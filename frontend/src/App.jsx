@@ -9,6 +9,7 @@ import TripsPage from './pages/TripsPage';
 import MaintenancePage from './pages/MaintenancePage';
 import AlertsPage from './pages/AlertsPage';
 import AuditLogPage from './pages/AuditLogPage';
+import DriversPage from './pages/DriversPage';
 
 // ป้องกัน route ที่ต้อง login ก่อน
 function PrivateRoute({ children }) {
@@ -61,6 +62,9 @@ function App() {
             <PrivateRoute>
               <AuditLogPage />
             </PrivateRoute>
+          } />
+          <Route path="/drivers" element={
+            <PrivateRoute><DriversPage /></PrivateRoute>
           } />
 
         </Routes>
