@@ -1,13 +1,22 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import {
+  MdDashboard,
+  MdLocalShipping,
+  MdMap,
+  MdBuild,
+  MdNotifications,
+  MdAssignment,
+  MdLogout
+} from 'react-icons/md';
 
 const NAV = [
-  { path: '/',            icon: '▦',  label: 'Dashboard'   },
-  { path: '/vehicles',    icon: '🚚', label: 'Vehicles'     },
-  { path: '/trips',       icon: '🗺️', label: 'Trips'        },
-  { path: '/maintenance', icon: '🔧', label: 'Maintenance'  },
-  { path: '/alerts',      icon: '🔔', label: 'Alerts',      badge: 0 },
-  { path: '/audit-logs',  icon: '📋', label: 'Audit Log'   },
+  { path: '/',            icon: <MdDashboard />,     label: 'Dashboard'  },
+  { path: '/vehicles',    icon: <MdLocalShipping />,  label: 'Vehicles'   },
+  { path: '/trips',       icon: <MdMap />,            label: 'Trips'      },
+  { path: '/maintenance', icon: <MdBuild />,          label: 'Maintenance'},
+  { path: '/alerts',      icon: <MdNotifications />,  label: 'Alerts', badge: 0 },
+  { path: '/audit-logs',  icon: <MdAssignment />,     label: 'Audit Log'  },
 ];
 
 export default function Layout({ children }) {
@@ -76,7 +85,8 @@ export default function Layout({ children }) {
 
         {/* Logout */}
         <button onClick={handleLogout} style={s.logoutBtn}>
-          ⏻ &nbsp;Logout
+          <MdLogout size={16} />
+          Logout
         </button>
 
       </aside>
@@ -142,6 +152,12 @@ const s = {
     borderRadius: 'var(--radius-sm)',
     color: 'var(--text-secondary)',
     fontSize: 12,
+    display: 'flex', 
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,   
+    cursor: 'pointer',
+    width: 'calc(100% - 2rem)',
   },
   main:      {
     flex: 1, padding: '1.75rem',

@@ -1,17 +1,18 @@
 import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import api from '../services/api';
+import { MdLocalShipping, MdBuild, MdPerson, MdMap, MdRefresh } from 'react-icons/md';
 
 const SEVERITY_STYLE = {
-  CRITICAL: { bg: '#fee2e2', text: '#dc2626', dot: '#dc2626' },
-  WARNING:  { bg: '#fef3c7', text: '#d97706', dot: '#d97706' },
+  CRITICAL: { bg: 'rgba(220,38,38,0.15)',  text: '#f87171', dot: '#f87171' },
+  WARNING:  { bg: 'rgba(234,179,8,0.15)',  text: '#facc15', dot: '#facc15' },
 };
 
 const RESOURCE_ICON = {
-  vehicle:     '🚚',
-  maintenance: '🔧',
-  driver:      '👤',
-  trip:        '🗺️',
+  vehicle:     <MdLocalShipping size={20} color="#00d4ff" />,
+  maintenance: <MdBuild         size={20} color="#fb923c" />,
+  driver:      <MdPerson        size={20} color="#a78bfa" />,
+  trip:        <MdMap           size={20} color="#34d399" />,
 };
 
 export default function AlertsPage() {
@@ -54,23 +55,17 @@ export default function AlertsPage() {
 
       {/* Summary */}
       <div style={styles.summaryRow}>
-        <div style={{ ...styles.summaryCard, background: '#fee2e2' }}>
-          <div style={{ fontSize: 22, fontWeight: 700, color: '#dc2626' }}>
-            {criticalCount}
-          </div>
-          <div style={{ fontSize: 12, color: '#dc2626' }}>CRITICAL</div>
+        <div style={{ ...styles.summaryCard, background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.25)' }}>
+          <div style={{ fontSize: 22, fontWeight: 700, color: '#f87171' }}>{criticalCount}</div>
+          <div style={{ fontSize: 12, color: '#f87171' }}>CRITICAL</div>
         </div>
-        <div style={{ ...styles.summaryCard, background: '#fef3c7' }}>
-          <div style={{ fontSize: 22, fontWeight: 700, color: '#d97706' }}>
-            {warningCount}
-          </div>
-          <div style={{ fontSize: 12, color: '#d97706' }}>WARNING</div>
+        <div style={{ ...styles.summaryCard, background: 'rgba(234,179,8,0.1)', border: '1px solid rgba(234,179,8,0.25)' }}>
+          <div style={{ fontSize: 22, fontWeight: 700, color: '#facc15' }}>{warningCount}</div>
+          <div style={{ fontSize: 12, color: '#facc15' }}>WARNING</div>
         </div>
-        <div style={{ ...styles.summaryCard, background: '#f1f5f9' }}>
-          <div style={{ fontSize: 22, fontWeight: 700, color: '#475569' }}>
-            {alerts.length}
-          </div>
-          <div style={{ fontSize: 12, color: '#475569' }}>TOTAL</div>
+        <div style={{ ...styles.summaryCard, background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+          <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)' }}>{alerts.length}</div>
+          <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>TOTAL</div>
         </div>
       </div>
 
@@ -99,7 +94,8 @@ export default function AlertsPage() {
         </span>
 
         <button style={styles.refreshBtn} onClick={fetchAlerts}>
-          🔄 Refresh
+          <MdRefresh size={14} />
+          Refresh
         </button>
       </div>
 
@@ -124,8 +120,8 @@ export default function AlertsPage() {
                     <div style={styles.cardRow}>
 
                       {/* Icon */}
-                      <span style={{ fontSize: 20 }}>
-                        {RESOURCE_ICON[a.affected_resource_type] || '⚠️'}
+                      <span style={{ display: 'flex', alignItems: 'center' }}>
+                        {RESOURCE_ICON[a.affected_resource_type] || <MdBuild size={20} color="#94a3b8" />}
                       </span>
 
                       {/* Message */}
@@ -175,48 +171,55 @@ export default function AlertsPage() {
 }
 
 const styles = {
-  title:       { margin: 0, fontSize: 20, fontWeight: 700 },
-  subtitle:    { margin: '4px 0 0', fontSize: 13, color: '#64748b' },
-  center:      { textAlign: 'center', padding: '2rem', color: '#94a3b8' },
+  title:       { margin: 0, fontSize: 20, fontWeight: 700, color: 'var(--text-primary)' },
+  subtitle:    { margin: '4px 0 0', fontSize: 13, color: 'var(--text-muted)' },
+  center:      { textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' },
+
   summaryRow:  { display: 'flex', gap: 10, marginBottom: '1rem' },
   summaryCard: { borderRadius: 8, padding: '12px 20px', textAlign: 'center', minWidth: 80 },
-  filterBar:   {
+
+  filterBar:  {
     display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap',
-    background: '#fff', padding: '12px', borderRadius: 8,
-    border: '1px solid #e2e8f0', marginBottom: '1rem',
+    background: 'var(--bg-surface)', padding: '12px', borderRadius: 8,
+    border: '1px solid var(--border)', marginBottom: '1rem',
   },
-  select:      {
+  select:     {
     padding: '7px 10px', borderRadius: 6,
-    border: '1px solid #e2e8f0', fontSize: 13,
-    outline: 'none', background: '#fff',
+    border: '1px solid var(--border)', fontSize: 13,
+    outline: 'none', background: 'var(--bg-base)', color: 'var(--text-primary)',
   },
-  count:       { fontSize: 12, color: '#94a3b8' },
-  refreshBtn:  {
+  count:      { fontSize: 12, color: 'var(--text-muted)' },
+  refreshBtn: {
     marginLeft: 'auto', padding: '6px 12px',
-    border: '1px solid #e2e8f0', borderRadius: 6,
-    background: '#fff', fontSize: 12, cursor: 'pointer',
+    border: '1px solid var(--border)', borderRadius: 6,
+    background: 'var(--bg-base)', fontSize: 12,
+    cursor: 'pointer', color: 'var(--text-secondary)',
+    display: 'flex', alignItems: 'center', gap: 4,
   },
-  list:        { display: 'grid', gap: 8, marginBottom: '1rem' },
-  card:        {
-    background: '#fff', borderRadius: 8,
-    padding: '12px 16px', border: '1px solid #e2e8f0',
+
+  list:    { display: 'grid', gap: 8, marginBottom: '1rem' },
+  card:    {
+    background: 'var(--bg-surface)', borderRadius: 8,
+    padding: '12px 16px', border: '1px solid var(--border)',
   },
-  cardRow:     { display: 'flex', alignItems: 'center', gap: 12 },
-  message:     { fontSize: 13, fontWeight: 500, color: '#0f172a', marginBottom: 4 },
-  meta:        { fontSize: 11, color: '#94a3b8' },
-  badge:       { fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 999, whiteSpace: 'nowrap' },
-  emptyBox:    {
-    background: '#f0fdf4', color: '#16a34a',
-    padding: '1.5rem', borderRadius: 8,
-    fontSize: 13, textAlign: 'center',
-    border: '1px solid #bbf7d0', marginBottom: '1rem',
+  cardRow: { display: 'flex', alignItems: 'center', gap: 12 },
+  message: { fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 4 },
+  meta:    { fontSize: 11, color: 'var(--text-muted)' },
+  badge:   { fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 999, whiteSpace: 'nowrap' },
+
+  emptyBox: {
+    background: 'rgba(22,163,74,0.08)', color: '#4ade80',
+    padding: '1.5rem', borderRadius: 8, fontSize: 13,
+    textAlign: 'center', border: '1px solid rgba(22,163,74,0.2)',
+    marginBottom: '1rem',
   },
-  rulesBox:    {
-    background: '#f8fafc', borderRadius: 8,
-    padding: '12px 16px', border: '1px solid #e2e8f0',
+
+  rulesBox:   {
+    background: 'var(--bg-surface)', borderRadius: 8,
+    padding: '12px 16px', border: '1px solid var(--border)',
     marginTop: '1rem',
   },
-  rulesTitle:  { fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 8 },
-  ruleItem:    { fontSize: 12, color: '#64748b', padding: '4px 0', borderBottom: '1px solid #f1f5f9' },
-  ruleNum:     { fontWeight: 600, color: '#374151' },
+  rulesTitle: { fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 },
+  ruleItem:   { fontSize: 12, color: 'var(--text-muted)', padding: '4px 0', borderBottom: '1px solid var(--border)' },
+  ruleNum:    { fontWeight: 600, color: 'var(--text-secondary)' },
 };

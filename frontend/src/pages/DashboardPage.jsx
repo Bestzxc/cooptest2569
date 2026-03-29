@@ -4,8 +4,10 @@ import Layout from '../components/Layout';
 import api from '../services/api';
 
 const STATUS_COLORS = {
-  ACTIVE: '#16a34a', IDLE: '#ca8a04',
-  MAINTENANCE: '#ea580c', RETIRED: '#6b7280',
+  ACTIVE:      '#4ade80',
+  IDLE:        '#facc15',
+  MAINTENANCE: '#fb923c',
+  RETIRED:     '#94a3b8',
 };
 
 export default function DashboardPage() {
@@ -145,8 +147,8 @@ export default function DashboardPage() {
             <div key={i} style={styles.alertRow}>
               <span style={{
                 ...styles.severityBadge,
-                background: a.severity === 'CRITICAL' ? '#fee2e2' : '#fef3c7',
-                color: a.severity === 'CRITICAL' ? '#dc2626' : '#d97706',
+                background: a.severity === 'CRITICAL' ? 'rgba(220,38,38,0.15)' : 'rgba(234,179,8,0.15)',
+                color: a.severity === 'CRITICAL' ? '#f87171' : '#facc15',
               }}>
                 {a.severity}
               </span>
@@ -164,7 +166,7 @@ function MetricCard({ label, value, sub, accent }) {
   return (
     <div style={styles.metricCard}>
       <div style={styles.metricLabel}>{label}</div>
-      <div style={{ ...styles.metricValue, color: accent || '#0f172a' }}>
+      <div style={{ ...styles.metricValue, color: accent || 'var(--text-primary)' }}>
         {value}
       </div>
       {sub && <div style={styles.metricSub}>{sub}</div>}
@@ -184,9 +186,10 @@ const styles = {
     padding: '1.1rem 1.25rem',
     transition: 'border-color .2s',
   },
-  metricLabel: { fontSize: 10, letterSpacing: 2, color: 'var(--text-muted)', marginBottom: 6, fontWeight: 600 },
-  metricValue: { fontSize: 28, fontWeight: 700, fontFamily: 'var(--font-mono)', letterSpacing: -1 },
-  metricSub:   { fontSize: 11, color: 'var(--text-muted)', marginTop: 4 },
+  metricLabel: { fontSize: 12, letterSpacing: 1, color: 'var(--text-muted)', marginBottom: 6, fontWeight: 600 },
+  metricValue: { fontSize: 32, fontWeight: 700, fontFamily: 'var(--font-mono)', letterSpacing: -1 },
+  metricSub:   { fontSize: 12, color: 'var(--text-muted)', marginTop: 4 },
+
   chartsGrid:  { display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '1rem', marginBottom: '1rem' },
   chartCard:   {
     background: 'var(--bg-surface)',
@@ -194,8 +197,8 @@ const styles = {
     borderRadius: 'var(--radius-md)',
     padding: '1.1rem 1.25rem',
   },
-  chartTitle:  { fontSize: 11, fontWeight: 600, letterSpacing: 2, color: 'var(--text-muted)', marginBottom: 10 },
-  legend:      { display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--text-secondary)' },
+  chartTitle:  { fontSize: 13, fontWeight: 600, letterSpacing: 1, color: 'var(--text-secondary)', marginBottom: 10 },
+  legend:      { display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--text-secondary)' },
   legendDot:   { width: 8, height: 8, borderRadius: 2, display: 'inline-block' },
   alertCard:   {
     background: 'var(--bg-surface)',
@@ -204,7 +207,8 @@ const styles = {
     padding: '1.1rem 1.25rem',
   },
   alertRow:    { display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid var(--border)' },
-  severityBadge: { fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 4, letterSpacing: 1 },
-  alertMsg:    { fontSize: 13, color: 'var(--text-primary)' },
-  noAlert:     { fontSize: 13, color: 'var(--success)', padding: '8px 0' },
+  severityBadge: { fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 4, letterSpacing: 1 },
+  alertMsg:    { fontSize: 14, color: 'var(--text-primary)' },
+  noAlert:     { fontSize: 14, color: 'var(--success)', padding: '8px 0' },
+  
 };

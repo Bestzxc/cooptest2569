@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import api from '../services/api';
+import { MdPerson } from 'react-icons/md';
 
 const STATUS_COLOR = {
-  SCHEDULED:   { bg: '#f5f3ff', text: '#6d28d9' },
-  IN_PROGRESS: { bg: '#dbeafe', text: '#1e40af' },
-  COMPLETED:   { bg: '#dcfce7', text: '#166534' },
-  CANCELLED:   { bg: '#fee2e2', text: '#dc2626' },
+  SCHEDULED:   { bg: 'rgba(109,40,217,0.15)',  text: '#a78bfa' },
+  IN_PROGRESS: { bg: 'rgba(37,99,235,0.15)',   text: '#60a5fa' },
+  COMPLETED:   { bg: 'rgba(22,163,74,0.15)',   text: '#4ade80' },
+  CANCELLED:   { bg: 'rgba(220,38,38,0.15)',   text: '#f87171' },
 };
 
 const CHECKPOINT_COLOR = {
@@ -113,7 +114,8 @@ export default function TripsPage() {
                         )}
                       </div>
                       <div style={styles.cardSub}>
-                        👤 {t.driver_name} · {new Date(t.started_at).toLocaleDateString('th-TH')} · {t.cargo_type}
+                        <MdPerson size={12} style={{ verticalAlign: 'middle' }} />
+                        {t.driver_name} · {new Date(t.started_at).toLocaleDateString('th-TH')} · {t.cargo_type}
                       </div>
                     </div>
                   );
@@ -396,13 +398,13 @@ function CheckpointTracker({ trip, checkpoints, setCheckpoints, onBack }) {
                 <span style={styles.trackerName}>{c.location_name}</span>
                 <span style={{
                   ...styles.badge,
-                  background: '#f1f5f9',
+                  background: 'var(--bg-surface)',
                   color: CHECKPOINT_COLOR[c.status],
                   fontWeight: 700,
                 }}>
                   {c.status}
                 </span>
-                <span style={{ ...styles.badge, background: '#f1f5f9', color: '#475569' }}>
+                <span style={{ ...styles.badge, background: 'var(--bg-surface)', color: 'var(--text-secondary)' }}>
                   {c.purpose}
                 </span>
               </div>
@@ -449,41 +451,51 @@ function CheckpointTracker({ trip, checkpoints, setCheckpoints, onBack }) {
 }
 
 const styles = {
-  title:       { margin: 0, fontSize: 20, fontWeight: 700 },
-  subtitle:    { margin: '4px 0 0', fontSize: 13, color: '#64748b' },
-  center:      { textAlign: 'center', padding: '2rem', color: '#94a3b8' },
-  list:        { display: 'grid', gap: 8 },
-  card:        { background: '#fff', borderRadius: 10, padding: '12px 16px', border: '1px solid #e2e8f0' },
-  cardRow:     { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
-  cardSub:     { fontSize: 11, color: '#94a3b8', marginTop: 4 },
-  badge:       { fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 999, whiteSpace: 'nowrap' },
-  route:       { fontWeight: 600, fontSize: 14, flex: 1 },
-  km:          { fontSize: 12, color: '#64748b' },
-  plate:       { fontSize: 12, color: '#64748b', fontFamily: 'monospace' },
-  primaryBtn:  { padding: '8px 16px', background: '#1d4ed8', color: '#fff', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer' },
-  secondaryBtn:{ padding: '8px 16px', background: '#fff', color: '#475569', border: '1px solid #e2e8f0', borderRadius: 6, fontSize: 13, cursor: 'pointer' },
-  trackBtn:    { padding: '4px 12px', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', background: '#1d4ed8', color: '#fff' },
-  stepRow:     { display: 'flex', gap: 4, marginBottom: '1.5rem' },
-  stepDot:     { width: 28, height: 28, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, margin: '0 auto' },
-  stepTitle:   { margin: '0 0 1rem', fontSize: 15, fontWeight: 600 },
-  formCard:    { background: '#fff', borderRadius: 10, padding: '1.5rem', border: '1px solid #e2e8f0', maxWidth: 520 },
-  field:       { marginBottom: '1rem' },
-  label:       { display: 'block', fontSize: 12, color: '#475569', marginBottom: 4 },
-  input:       { width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid #e2e8f0', fontSize: 13, boxSizing: 'border-box', outline: 'none' },
-  select:      { width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid #e2e8f0', fontSize: 13, outline: 'none', background: '#fff' },
-  chkBox:      { background: '#f8fafc', borderRadius: 8, padding: '10px 12px', marginBottom: 8 },
-  chkHeader:   { display: 'flex', justifyContent: 'space-between', marginBottom: 6 },
-  chkNum:      { fontSize: 12, fontWeight: 600, color: '#475569' },
-  removeBtn:   { fontSize: 11, color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer' },
-  addChkBtn:   { width: '100%', padding: '8px', border: '1px dashed #cbd5e1', borderRadius: 6, background: 'transparent', fontSize: 13, cursor: 'pointer', color: '#64748b', marginTop: 4 },
-  errorBox:    { background: '#fee2e2', color: '#dc2626', padding: '8px 12px', borderRadius: 6, fontSize: 13, margin: '1rem 0' },
-  btnRow:      { display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem' },
-  tracker:     { background: '#fff', borderRadius: 10, padding: '1.5rem', border: '1px solid #e2e8f0', position: 'relative' },
-  trackerItem: { display: 'flex', gap: 12, position: 'relative', marginBottom: 24 },
-  trackerLine: { position: 'absolute', left: 10, top: 24, bottom: -24, width: 2, background: '#e2e8f0', zIndex: 0 },
-  trackerDot:  { width: 20, height: 20, borderRadius: 10, flexShrink: 0, marginTop: 2, zIndex: 1 },
-  trackerContent:{ flex: 1, background: '#f8fafc', borderRadius: 8, padding: '10px 12px' },
-  trackerHeader: { display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 4 },
-  trackerName: { fontWeight: 600, fontSize: 14, flex: 1 },
-  trackerTime: { fontSize: 11, color: '#94a3b8' },
+  title:        { margin: 0, fontSize: 20, fontWeight: 700, color: 'var(--text-primary)' },
+  subtitle:     { margin: '4px 0 0', fontSize: 13, color: 'var(--text-muted)' },
+  center:       { textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' },
+  list:         { display: 'grid', gap: 8 },
+
+  card:         { background: 'var(--bg-surface)', borderRadius: 10, padding: '12px 16px', border: '1px solid var(--border)' },
+  cardRow:      { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+  cardSub: { 
+    fontSize: 11, color: 'var(--text-muted)', marginTop: 4,
+    display: 'flex', alignItems: 'center', gap: 4,
+  },
+  badge:        { fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 999, whiteSpace: 'nowrap' },
+  route:        { fontWeight: 600, fontSize: 14, flex: 1, color: 'var(--text-primary)' },
+  km:           { fontSize: 12, color: 'var(--text-secondary)' },
+  plate:        { fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'monospace' },
+
+  primaryBtn:   { padding: '8px 16px', background: '#1d4ed8', color: '#fff', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer' },
+  secondaryBtn: { padding: '8px 16px', background: 'var(--bg-surface)', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 13, cursor: 'pointer' },
+  trackBtn:     { padding: '4px 12px', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', background: '#1d4ed8', color: '#fff' },
+
+  stepRow:      { display: 'flex', gap: 4, marginBottom: '1.5rem' },
+  stepDot:      { width: 28, height: 28, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, margin: '0 auto' },
+  stepTitle:    { margin: '0 0 1rem', fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' },
+
+  formCard:     { background: 'var(--bg-surface)', borderRadius: 10, padding: '1.5rem', border: '1px solid var(--border)', maxWidth: 520 },
+  field:        { marginBottom: '1rem' },
+  label:        { display: 'block', fontSize: 12, color: 'var(--text-secondary)', marginBottom: 4 },
+  input:        { width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)', fontSize: 13, boxSizing: 'border-box', outline: 'none', background: 'var(--bg-base)', color: 'var(--text-primary)' },
+  select:       { width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)', fontSize: 13, outline: 'none', background: 'var(--bg-base)', color: 'var(--text-primary)' },
+
+  chkBox:       { background: 'var(--bg-base)', borderRadius: 8, padding: '10px 12px', marginBottom: 8, border: '1px solid var(--border)' },
+  chkHeader:    { display: 'flex', justifyContent: 'space-between', marginBottom: 6 },
+  chkNum:       { fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' },
+  removeBtn:    { fontSize: 11, color: '#f87171', background: 'none', border: 'none', cursor: 'pointer' },
+  addChkBtn:    { width: '100%', padding: '8px', border: '1px dashed var(--border)', borderRadius: 6, background: 'transparent', fontSize: 13, cursor: 'pointer', color: 'var(--text-muted)', marginTop: 4 },
+
+  errorBox:     { background: 'rgba(220,38,38,0.15)', color: '#f87171', padding: '8px 12px', borderRadius: 6, fontSize: 13, margin: '1rem 0', border: '1px solid rgba(220,38,38,0.3)' },
+  btnRow:       { display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem' },
+
+  tracker:        { background: 'var(--bg-surface)', borderRadius: 10, padding: '1.5rem', border: '1px solid var(--border)', position: 'relative' },
+  trackerItem:    { display: 'flex', gap: 12, position: 'relative', marginBottom: 24 },
+  trackerLine:    { position: 'absolute', left: 10, top: 24, bottom: -24, width: 2, background: 'var(--border)', zIndex: 0 },
+  trackerDot:     { width: 20, height: 20, borderRadius: 10, flexShrink: 0, marginTop: 2, zIndex: 1 },
+  trackerContent: { flex: 1, background: 'var(--bg-base)', borderRadius: 8, padding: '10px 12px', border: '1px solid var(--border)' },
+  trackerHeader:  { display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 4 },
+  trackerName:    { fontWeight: 600, fontSize: 14, flex: 1, color: 'var(--text-primary)' },
+  trackerTime:    { fontSize: 11, color: 'var(--text-muted)' },
 };

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { MdLock, MdLocalShipping, MdMap, MdLocationOn, MdPerson, MdBuild } from 'react-icons/md';
 
 const ACTION_COLOR = {
   LOGIN:               '#2563eb',
@@ -17,12 +18,12 @@ const ACTION_COLOR = {
 };
 
 const RESOURCE_ICON = {
-  auth:        '🔐',
-  vehicle:     '🚚',
-  trip:        '🗺️',
-  checkpoint:  '📍',
-  driver:      '👤',
-  maintenance: '🔧',
+  auth:        <MdLock          size={18} color="#facc15" />,
+  vehicle:     <MdLocalShipping size={18} color="#00d4ff" />,
+  trip:        <MdMap           size={18} color="#34d399" />,
+  checkpoint:  <MdLocationOn    size={18} color="#f87171" />,
+  driver:      <MdPerson        size={18} color="#a78bfa" />,
+  maintenance: <MdBuild         size={18} color="#fb923c" />,
 };
 
 export default function AuditLogPage() {
@@ -161,8 +162,9 @@ export default function AuditLogPage() {
                         </span>
                       </td>
                       <td style={styles.td}>
-                        <span style={styles.resource}>
-                          {RESOURCE_ICON[l.resource_type] || '•'} {l.resource_type}
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          {RESOURCE_ICON[l.resource_type] || <MdBuild size={18} color="#94a3b8" />}
+                          {l.resource_type}
                         </span>
                       </td>
                       <td style={styles.td}>
@@ -177,8 +179,8 @@ export default function AuditLogPage() {
                           {l.result && (
                             <span style={{
                               ...styles.resultBadge,
-                              background: l.result === 'SUCCESS' ? '#dcfce7' : '#fee2e2',
-                              color:      l.result === 'SUCCESS' ? '#166534' : '#dc2626',
+                              background: l.result === 'SUCCESS' ? 'rgba(22,163,74,0.15)' : 'rgba(220,38,38,0.15)',
+                              color:      l.result === 'SUCCESS' ? '#4ade80'               : '#f87171',
                             }}>
                               {l.result}
                             </span>
@@ -200,32 +202,61 @@ export default function AuditLogPage() {
 }
 
 const styles = {
-  title:       { margin: 0, fontSize: 20, fontWeight: 700 },
-  subtitle:    { margin: '4px 0 0', fontSize: 13, color: '#64748b' },
-  center:      { textAlign: 'center', padding: '2rem', color: '#94a3b8' },
-  filterBar:   {
+  title:      { margin: 0, fontSize: 20, fontWeight: 700, color: 'var(--text-primary)' },
+  subtitle:   { margin: '4px 0 0', fontSize: 13, color: 'var(--text-muted)' },
+  center:     { textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' },
+
+  filterBar:  {
     display: 'flex', gap: 8, alignItems: 'center',
-    flexWrap: 'wrap', background: '#fff',
+    flexWrap: 'wrap', background: 'var(--bg-surface)',
     padding: '12px', borderRadius: 8,
-    border: '1px solid #e2e8f0', marginBottom: '1rem',
+    border: '1px solid var(--border)', marginBottom: '1rem',
   },
-  select:      { padding: '7px 10px', borderRadius: 6, border: '1px solid #e2e8f0', fontSize: 13, outline: 'none', background: '#fff' },
-  dateInput:   { padding: '7px 10px', borderRadius: 6, border: '1px solid #e2e8f0', fontSize: 13, outline: 'none' },
-  searchBtn:   { padding: '7px 14px', background: '#1d4ed8', color: '#fff', border: 'none', borderRadius: 6, fontSize: 13, cursor: 'pointer' },
-  count:       { marginLeft: 'auto', fontSize: 12, color: '#94a3b8' },
-  emptyBox:    { textAlign: 'center', padding: '2rem', color: '#94a3b8', background: '#fff', borderRadius: 8, border: '1px solid #e2e8f0' },
-  tableWrap:   { background: '#fff', borderRadius: 10, border: '1px solid #e2e8f0', overflow: 'hidden' },
-  table:       { width: '100%', borderCollapse: 'collapse', fontSize: 12 },
-  thead:       { background: '#f8fafc' },
-  th:          { padding: '10px 12px', textAlign: 'left', fontWeight: 600, color: '#475569', whiteSpace: 'nowrap', borderBottom: '1px solid #e2e8f0' },
-  tr:          { borderBottom: '1px solid #f1f5f9' },
-  td:          { padding: '10px 12px', verticalAlign: 'middle' },
-  timestamp:   { fontFamily: 'monospace', fontSize: 11, color: '#64748b', whiteSpace: 'nowrap' },
-  userId:      { fontFamily: 'monospace', fontSize: 11, color: '#374151' },
+  select:     {
+    padding: '7px 10px', borderRadius: 6,
+    border: '1px solid var(--border)', fontSize: 13,
+    outline: 'none', background: 'var(--bg-base)',
+    color: 'var(--text-primary)',
+  },
+  dateInput:  {
+    padding: '7px 10px', borderRadius: 6,
+    border: '1px solid var(--border)', fontSize: 13,
+    outline: 'none', background: 'var(--bg-base)',
+    color: 'var(--text-primary)',
+    colorScheme: 'dark',                          // ทำให้ date picker เป็น dark
+  },
+  searchBtn:  {
+    padding: '7px 14px', background: '#1d4ed8',
+    color: '#fff', border: 'none', borderRadius: 6,
+    fontSize: 13, cursor: 'pointer',
+  },
+  count:      { marginLeft: 'auto', fontSize: 12, color: 'var(--text-muted)' },
+
+  emptyBox:   {
+    textAlign: 'center', padding: '2rem',
+    color: 'var(--text-muted)', background: 'var(--bg-surface)',
+    borderRadius: 8, border: '1px solid var(--border)',
+  },
+  tableWrap:  {
+    background: 'var(--bg-surface)', borderRadius: 10,
+    border: '1px solid var(--border)', overflow: 'hidden',
+  },
+  table:      { width: '100%', borderCollapse: 'collapse', fontSize: 12 },
+  thead:      { background: 'var(--bg-base)' },
+  th:         {
+    padding: '10px 12px', textAlign: 'left',
+    fontWeight: 600, color: 'var(--text-secondary)',
+    whiteSpace: 'nowrap', borderBottom: '1px solid var(--border)',
+  },
+  tr:         { borderBottom: '1px solid var(--border)' },
+  td:         { padding: '10px 12px', verticalAlign: 'middle' },
+
+  timestamp:   { fontFamily: 'monospace', fontSize: 11, color: 'var(--text-muted)', whiteSpace: 'nowrap' },
+  userId:      { fontFamily: 'monospace', fontSize: 11, color: 'var(--text-secondary)' },
   actionBadge: { fontSize: 11, fontWeight: 600 },
-  resource:    { fontSize: 12, color: '#64748b' },
-  resourceId:  { fontFamily: 'monospace', fontSize: 11, color: '#94a3b8' },
+  resource:    { fontSize: 12, color: 'var(--text-secondary)' },
+  resourceId:  { fontFamily: 'monospace', fontSize: 11, color: 'var(--text-muted)' },
   detail:      { display: 'flex', alignItems: 'center', gap: 6 },
   resultBadge: { fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 999 },
-  ip:          { fontSize: 10, color: '#94a3b8', fontFamily: 'monospace' },
+  ip:          { fontSize: 10, color: 'var(--text-muted)', fontFamily: 'monospace' },
 };

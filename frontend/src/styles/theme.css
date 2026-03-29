@@ -12,8 +12,8 @@
   --accent-glow:   0 0 20px rgba(0, 212, 255, 0.25);
 
   --text-primary:  #f0f4ff;
-  --text-secondary:#7a8baa;
-  --text-muted:    #3d4f6b;
+  --text-secondary:#a5b3cd;
+  --text-muted:    #93a2ba;
 
   --border:        rgba(255,255,255,0.07);
   --border-accent: rgba(0, 212, 255, 0.3);
@@ -67,7 +67,7 @@ input, select, textarea {
   color: var(--text-primary);
   border-radius: var(--radius-sm);
   font-family: var(--font-body);
-  font-size: 13px;
+  font-size: 14px;
   padding: 8px 12px;
   outline: none;
   transition: border-color .2s;

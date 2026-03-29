@@ -1,17 +1,22 @@
 import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import api from '../services/api';
+import { MdOilBarrel, MdTireRepair, MdBuild, MdSettings, MdSearch, MdHandyman } from 'react-icons/md';
 
 const TYPE_ICON = {
-  OIL_CHANGE: '🛢️', TIRE: '🔵', BRAKE: '🔴',
-  ENGINE: '⚙️', INSPECTION: '🔍', REPAIR: '🔨',
+  OIL_CHANGE:  <MdOilBarrel  size={22} color="#facc15" />,
+  TIRE:        <MdTireRepair size={22} color="#60a5fa" />,
+  BRAKE:       <MdBuild      size={22} color="#f87171" />,
+  ENGINE:      <MdSettings   size={22} color="#a78bfa" />,
+  INSPECTION:  <MdSearch     size={22} color="#34d399" />,
+  REPAIR:      <MdHandyman   size={22} color="#fb923c" />,
 };
 
 const STATUS_COLOR = {
-  SCHEDULED: { bg: '#f5f3ff', text: '#6d28d9' },
-  IN_PROGRESS: { bg: '#dbeafe', text: '#1e40af' },
-  COMPLETED: { bg: '#dcfce7', text: '#166534' },
-  OVERDUE: { bg: '#fee2e2', text: '#dc2626' },
+  SCHEDULED:   { bg: 'rgba(109,40,217,0.15)',  text: '#a78bfa' },
+  IN_PROGRESS: { bg: 'rgba(37,99,235,0.15)',   text: '#60a5fa' },
+  COMPLETED:   { bg: 'rgba(22,163,74,0.15)',   text: '#4ade80' },
+  OVERDUE:     { bg: 'rgba(220,38,38,0.15)',   text: '#f87171' },
 };
 
 export default function MaintenancePage() {
@@ -48,12 +53,12 @@ export default function MaintenancePage() {
   };
 
   const urgencyStyle = {
-    overdue: { border: '1.5px solid #fca5a5', background: '#fee2e2' },
-    soon: { border: '1.5px solid #fde68a', background: '#fefce8' },
-    inprog: { border: '1.5px solid #93c5fd', background: '#eff6ff' },
-    ok: { border: '1px solid #e2e8f0', background: '#fff' },
-    done: { border: '1px solid #e2e8f0', background: '#f8fafc', opacity: .7 },
-  };
+  overdue: { border: '1.5px solid rgba(220,38,38,0.4)',  background: 'rgba(220,38,38,0.08)'  },
+  soon:    { border: '1.5px solid rgba(234,179,8,0.4)',  background: 'rgba(234,179,8,0.08)'  },
+  inprog:  { border: '1.5px solid rgba(37,99,235,0.4)',  background: 'rgba(37,99,235,0.08)'  },
+  ok:      { border: '1px solid var(--border)',          background: 'var(--bg-surface)'     },
+  done:    { border: '1px solid var(--border)',          background: 'var(--bg-surface)',  opacity: .5 },
+};
 
   if (loading) {
     return <Layout><div style={styles.center}>กำลังโหลด...</div></Layout>;
@@ -86,8 +91,8 @@ export default function MaintenancePage() {
                     <div style={styles.cardRow}>
 
                       {/* Icon + type */}
-                      <span style={{ fontSize: 22 }}>
-                        {TYPE_ICON[m.type] || '🔧'}
+                      <span style={{ display: 'flex', alignItems: 'center' }}>
+                        {TYPE_ICON[m.type] || <MdBuild size={22} color="#94a3b8" />}
                       </span>
                       <div style={{ flex: 1 }}>
                         <div style={styles.cardTitle}>
@@ -156,8 +161,8 @@ export default function MaintenancePage() {
             : alerts.map((a, i) => (
               <div key={i} style={{
                 ...styles.alertCard,
-                border: `1px solid ${a.severity === 'CRITICAL' ? '#fca5a5' : '#fde68a'}`,
-                background: a.severity === 'CRITICAL' ? '#fee2e2' : '#fefce8',
+                border: `1px solid ${a.severity === 'CRITICAL' ? 'rgba(220,38,38,0.3)' : 'rgba(234,179,8,0.3)'}`,
+                background: a.severity === 'CRITICAL' ? 'rgba(220,38,38,0.05)' : 'rgba(234,179,8,0.05)',
               }}>
                 <div style={styles.alertTop}>
                   <span style={{
@@ -182,22 +187,23 @@ export default function MaintenancePage() {
 }
 
 const styles = {
-  title: { margin: 0, fontSize: 20, fontWeight: 700 },
-  subtitle: { margin: '4px 0 0', fontSize: 13, color: '#64748b' },
-  center: { textAlign: 'center', padding: '2rem', color: '#94a3b8' },
-  grid: { display: 'grid', gridTemplateColumns: '1fr 300px', gap: '1.25rem' },
-  sectionTitle: { fontSize: 13, fontWeight: 600, color: '#475569', marginBottom: 10 },
-  list: { display: 'grid', gap: 8 },
-  card: { borderRadius: 10, padding: '12px 14px' },
-  cardRow: { display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
-  cardTitle: { fontWeight: 600, fontSize: 13, color: '#0f172a' },
-  cardSub: { fontSize: 11, color: '#94a3b8', marginTop: 2 },
-  badge: { fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 999, whiteSpace: 'nowrap' },
-  dateText: { fontSize: 12, fontFamily: 'monospace', color: '#374151' },
-  notes: { fontSize: 11, color: '#64748b', marginTop: 6, paddingTop: 6, borderTop: '1px solid rgba(0,0,0,.06)' },
-  alertCard: { borderRadius: 8, padding: '10px 12px', marginBottom: 8 },
-  alertTop: { display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 },
-  alertType: { fontSize: 11, color: '#64748b' },
-  alertMsg: { fontSize: 12, color: '#374151', lineHeight: 1.5 },
-  alertId: { fontSize: 10, color: '#94a3b8', fontFamily: 'monospace', marginTop: 4 },
+  title:        { margin: 0, fontSize: 20, fontWeight: 700, color: 'var(--text-primary)' },
+  subtitle:     { margin: '4px 0 0', fontSize: 13, color: 'var(--text-muted)' },
+  center:       { textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' },
+  grid:         { display: 'grid', gridTemplateColumns: '1fr 300px', gap: '1.25rem' },
+  sectionTitle: { fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 10 },
+  list:         { display: 'grid', gap: 8 },
+  card:         { borderRadius: 10, padding: '12px 14px' },
+  cardRow:      { display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
+  cardTitle:    { fontWeight: 600, fontSize: 13, color: 'var(--text-primary)' },
+  cardSub:      { fontSize: 11, color: 'var(--text-muted)', marginTop: 2 },
+  badge:        { fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 999, whiteSpace: 'nowrap' },
+  dateText:     { fontSize: 12, fontFamily: 'monospace', color: 'var(--text-secondary)' },
+  notes:        { fontSize: 11, color: 'var(--text-muted)', marginTop: 6, paddingTop: 6, borderTop: '1px solid var(--border)' },
+
+  alertCard:  { borderRadius: 8, padding: '10px 12px', marginBottom: 8 },
+  alertTop:   { display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 },
+  alertType: { fontSize: 11, color: 'var(--text-muted)' },
+  alertMsg:  { fontSize: 12, color: 'var(--text-primary)', lineHeight: 1.5 },
+  alertId:   { fontSize: 10, color: 'var(--text-muted)', fontFamily: 'monospace', marginTop: 4 },
 };
