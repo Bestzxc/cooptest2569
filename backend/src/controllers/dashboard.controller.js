@@ -1,22 +1,19 @@
 const db = require('../config/db');
 
-// GET /dashboard/stats
 const getDashboardStats = async (req, res) => {
   try {
-    // ดึง trip distance 7 วันล่าสุด แยกตามวัน
     const [distanceRows] = await db.query(`
       SELECT 
-        DATE(started_at) as date,
-        SUM(distance_km)  as total_km
+        DATE(CONVERT_TZ(COALESCE(ended_at, started_at), '+00:00', '+07:00')) as date,
+        SUM(distance_km) as total_km
       FROM trips
       WHERE 
-        status IN ('SCHEDULED', 'IN_PROGRESS', 'COMPLETED')
-        AND DATE(started_at) >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
-      GROUP BY DATE(started_at)
+        status IN ('IN_PROGRESS', 'COMPLETED')
+        AND CONVERT_TZ(COALESCE(ended_at, started_at), '+00:00', '+07:00') >= DATE_SUB(CONVERT_TZ(NOW(), '+00:00', '+07:00'), INTERVAL 6 DAY)
+      GROUP BY DATE(CONVERT_TZ(COALESCE(ended_at, started_at), '+00:00', '+07:00'))
       ORDER BY date ASC
     `);
 
-    // สร้าง array 7 วันเต็ม ถ้าวันไหนไม่มีข้อมูลให้ km = 0
     const days = [];
     for (let i = 6; i >= 0; i--) {
       const d = new Date();
@@ -38,7 +35,7 @@ const getDashboardStats = async (req, res) => {
       });
 
       days.push({
-        day: `${d.getDate()}/${d.getMonth() + 1}`, // เปลี่ยนจาก dayName เป็นวันที่
+        day: `${d.getDate()}/${d.getMonth() + 1}`,
         date: dateStr,
         km: found ? Math.round(Number(found.total_km)) : 0,
       });
