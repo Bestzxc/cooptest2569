@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Layout from '../components/Layout';
 import api from '../services/api';
 import ProvinceInput from '../components/ProvinceInput';
 import Toast, { useToast } from '../components/Toast';
 import ConfirmModal from '../components/ConfirmModal';
 import { useAuth } from '../context/AuthContext';
-import { MdPerson, MdLocalGasStation, MdHotel, MdInventory, MdMoveToInbox, MdSearch } from 'react-icons/md';
+import { MdPerson, MdLocalGasStation, MdLocalShipping, MdAirportShuttle, MdDirectionsCar, MdTwoWheeler, MdHotel, MdInventory, MdMoveToInbox, MdSearch } from 'react-icons/md';
 
 const STATUS_COLOR = {
   SCHEDULED: { bg: 'rgba(109,40,217,0.15)', text: '#a78bfa' },
@@ -31,6 +31,26 @@ export default function TripsPage() {
   const { toast, showToast, hideToast } = useToast();
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
   const { user } = useAuth();
+
+  const VEHICLE_ICONS = {
+    TRUCK: <MdLocalShipping size={14} color="#00d4ff" />,
+    VAN: <MdAirportShuttle size={14} color="#a78bfa" />,
+    PICKUP: <MdDirectionsCar size={14} color="#34d399" />,
+    MOTORCYCLE: <MdTwoWheeler size={14} color="#fb923c" />,
+  };
+
+  const driverVehicleMap = useMemo(() => {
+    const map = {};
+    trips.forEach(t => {
+      if (!t.driver_name || !t.license_plate) return;
+      if (!map[t.driver_name]) map[t.driver_name] = new Set();
+      map[t.driver_name].add(t.license_plate);
+    });
+    return Object.entries(map).map(([driver, plates]) => ({
+      driver,
+      plates: Array.from(plates),
+    }));
+  }, [trips]);
 
   useEffect(() => { fetchTrips(); }, []);
 
@@ -173,7 +193,6 @@ export default function TripsPage() {
                         {t.origin} → {t.destination}
                       </span>
                       <span style={styles.km}>{Number(t.distance_km).toLocaleString()} km</span>
-                      <span style={styles.plate}>{t.license_plate}</span>
 
                       {(t.status === 'IN_PROGRESS' || t.status === 'SCHEDULED') && (
                         <button style={styles.trackBtn} onClick={() => openTracker(t)}>
@@ -192,7 +211,10 @@ export default function TripsPage() {
                     </div>
                     <div style={styles.cardSub}>
                       <MdPerson size={12} style={{ verticalAlign: 'middle' }} />
-                      {t.driver_name} · {new Date(t.started_at).toLocaleDateString('th-TH')} · {t.cargo_type}
+                      {t.driver_name || 'ไม่ระบุคนขับ'} ·
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        {VEHICLE_ICONS[t.type] || <MdDirectionsCar size={14} color="#94a3b8" />} {t.license_plate || '-'}
+                      </span> · {t.cargo_type} · {new Date(t.started_at).toLocaleDateString('th-TH')}
                     </div>
                   </div>
                 );
@@ -574,6 +596,12 @@ const styles = {
   trackBtn: { padding: '4px 12px', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', background: '#1d4ed8', color: '#fff' },
   filterBar: { display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: '1rem' },
   filterBtn: { padding: '5px 12px', borderRadius: 999, fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all .15s' },
+  mappingBox: { border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-base)', padding: '10px 12px', marginBottom: '1rem' },
+  mappingList: { marginTop: 6, display: 'grid', gap: 4 },
+  mappingItem: { fontSize: 12, display: 'flex', gap: 6, alignItems: 'center' },
+  mappingDriver: { color: 'var(--text-primary)', fontWeight: 600 },
+  mappingSeparator: { color: 'var(--text-muted)' },
+  mappingPlate: { color: 'var(--text-secondary)' },
   stepRow: { display: 'flex', gap: 4, marginBottom: '1.5rem' },
   stepDot: { width: 28, height: 28, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, margin: '0 auto' },
   stepTitle: { margin: '0 0 1rem', fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' },

@@ -30,6 +30,9 @@ export default function VehiclesPage() {
   const [filterStatus, setFilterStatus] = useState(searchParams.get('status') || 'ALL');
   const [filterType, setFilterType] = useState(searchParams.get('type') || 'ALL');
   const { toast, showToast, hideToast } = useToast();
+  const [selectedVehicle, setSelectedVehicle] = useState(null);
+  const [history, setHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   useEffect(() => { fetchAll(); }, []);
 
@@ -42,6 +45,18 @@ export default function VehiclesPage() {
       setError('โหลดข้อมูลไม่สำเร็จ');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchHistory = async (vehicleId) => {
+    setHistoryLoading(true);
+    try {
+      const res = await api.get(`/vehicles/${vehicleId}/history`);
+      setHistory(res.data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setHistoryLoading(false);
     }
   };
 
@@ -133,7 +148,10 @@ export default function VehiclesPage() {
                   (v.next_service_km - v.last_service_km)) * 100)
                 : 0;
               return (
-                <div key={v.id} style={styles.card}>
+                <div key={v.id} style={styles.card} onClick={() => {
+                  setSelectedVehicle(v);
+                  fetchHistory(v.id);
+                }}>
                   <div style={styles.cardHeader}>
                     <span style={styles.typeIcon}>{TYPE_ICON[v.type]}</span>
                     <span style={styles.plate}>{v.license_plate}</span>
@@ -181,6 +199,63 @@ export default function VehiclesPage() {
           }}
         />
       )}
+
+      {selectedVehicle && (
+        <div style={styles.modalOverlay} onClick={() => setSelectedVehicle(null)}>
+          <div style={styles.modal} onClick={e => e.stopPropagation()}>
+            <div style={styles.modalHeader}>
+              <h2>ประวัติ {selectedVehicle.license_plate}</h2>
+              <button style={styles.closeBtn} onClick={() => setSelectedVehicle(null)}>×</button>
+            </div>
+            <div style={styles.modalBody}>
+              {historyLoading ? (
+                <div style={styles.center}>กำลังโหลดประวัติ...</div>
+              ) : history.length === 0 ? (
+                <div style={styles.center}>ไม่มีประวัติ</div>
+              ) : (
+                <div style={styles.historyList}>
+                  {history.map(item => {
+                    const date = item.type === 'trip' ? item.started_at : item.scheduled_at;
+                    const formattedDate = new Date(date).toLocaleDateString('th-TH', {
+                      year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                    });
+                    return (
+                      <div key={`${item.type}-${item.id}`} style={styles.historyItem}>
+                        <div style={styles.historyIcon}>
+                          {item.type === 'trip' ? '🚛' : '🔧'}
+                        </div>
+                        <div style={styles.historyContent}>
+                          {item.type === 'trip' ? (
+                            <>
+                              <div style={styles.historyTitle}>
+                                Trip: {item.origin} → {item.destination}
+                              </div>
+                              <div style={styles.historySub}>
+                                Status: {item.status} | Distance: {item.distance_km} km
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div style={styles.historyTitle}>
+                                Maintenance: {item.type.replace('_', ' ')}
+                              </div>
+                              <div style={styles.historySub}>
+                                Status: {item.status} | {item.notes || 'No notes'}
+                              </div>
+                            </>
+                          )}
+                          <div style={styles.historyDate}>{formattedDate}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <Toast toast={toast} onHide={hideToast} />
     </Layout>
   );
@@ -361,4 +436,16 @@ const styles = {
   field: { display: 'flex', flexDirection: 'column', gap: 4 },
   label: { fontSize: 10, letterSpacing: 2, color: 'var(--text-muted)', fontWeight: 600 },
   cancelBtn: { padding: '8px 16px', background: 'transparent', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', color: 'var(--text-secondary)', fontSize: 13, cursor: 'pointer' },
+  modalOverlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  modal: { background: 'var(--bg-surface)', borderRadius: 'var(--radius-lg)', width: 600, maxWidth: '90vw', border: '1px solid var(--border)', maxHeight: '90vh', display: 'flex', flexDirection: 'column' },
+  modalHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border)' },
+  closeBtn: { background: 'transparent', border: 'none', color: 'var(--text-secondary)', fontSize: 16, cursor: 'pointer' },
+  modalBody: { padding: '1.25rem 1.5rem', overflowY: 'auto' },
+  historyList: { display: 'flex', flexDirection: 'column', gap: 12 },
+  historyItem: { display: 'flex', gap: 12, padding: '12px', background: 'var(--bg-base)', borderRadius: 8, border: '1px solid var(--border)' },
+  historyIcon: { fontSize: 20, flexShrink: 0 },
+  historyContent: { flex: 1 },
+  historyTitle: { fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4 },
+  historySub: { fontSize: 12, color: 'var(--text-secondary)', marginBottom: 4 },
+  historyDate: { fontSize: 11, color: 'var(--text-muted)' },
 };

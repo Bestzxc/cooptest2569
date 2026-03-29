@@ -268,7 +268,59 @@ const updateVehicleStatus = async (req, res) => {
   }
 };
 
+// ── GET /vehicles/:id/history ─────────────────────────
+const getVehicleHistory = async (req, res) => {
+  try {
+    // 1. เช็คว่า vehicle มีอยู่จริงไหม
+    const [vehicles] = await db.query(
+      'SELECT id, license_plate FROM vehicles WHERE id = ?',
+      [req.params.id]
+    );
+
+    if (vehicles.length === 0) {
+      return res.status(404).json({
+        error: { code: 'NOT_FOUND', message: 'ไม่พบ vehicle', details: {} }
+      });
+    }
+
+    // 2. ดึง trips ของ vehicle นี้
+    const [trips] = await db.query(
+      `SELECT id, origin, destination, status, started_at, ended_at, distance_km
+       FROM trips WHERE vehicle_id = ? ORDER BY started_at DESC`,
+      [req.params.id]
+    );
+
+    // 3. ดึง maintenance ของ vehicle นี้
+    const [maintenances] = await db.query(
+      `SELECT id, type, status, scheduled_at, completed_at, notes
+       FROM maintenance WHERE vehicle_id = ? ORDER BY scheduled_at DESC`,
+      [req.params.id]
+    );
+
+    // 4. รวมเข้าด้วยกัน และเพิ่ม type field
+    const history = [
+      ...trips.map(t => ({ type: 'trip', ...t })),
+      ...maintenances.map(m => ({ type: 'maintenance', ...m }))
+    ];
+
+    // 5. เรียงตาม date (started_at สำหรับ trip, scheduled_at สำหรับ maintenance)
+    history.sort((a, b) => {
+      const dateA = a.type === 'trip' ? new Date(a.started_at) : new Date(a.scheduled_at);
+      const dateB = b.type === 'trip' ? new Date(b.started_at) : new Date(b.scheduled_at);
+      return dateB - dateA; // DESC: ล่าสุดก่อน
+    });
+
+    res.json(history);
+
+  } catch (err) {
+    console.error('Get vehicle history error:', err);
+    res.status(500).json({
+      error: { code: 'INTERNAL_ERROR', message: 'เกิดข้อผิดพลาด', details: {} }
+    });
+  }
+};
+
 module.exports = {
   createVehicle, getVehicles, getVehicleById,
-  deleteVehicle, updateVehicleStatus
+  deleteVehicle, updateVehicleStatus, getVehicleHistory
 };
