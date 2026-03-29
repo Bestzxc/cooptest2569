@@ -11,7 +11,7 @@ const getDashboardStats = async (req, res) => {
       FROM trips
       WHERE 
         status IN ('SCHEDULED', 'IN_PROGRESS', 'COMPLETED')
-        AND started_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+        AND DATE(started_at) >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
       GROUP BY DATE(started_at)
       ORDER BY date ASC
     `);
@@ -21,19 +21,24 @@ const getDashboardStats = async (req, res) => {
     for (let i = 6; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
-      const dateStr = d.toISOString().split('T')[0]; // "2024-01-15"
+      const dateStr = [
+        d.getFullYear(),
+        String(d.getMonth() + 1).padStart(2, '0'),
+        String(d.getDate()).padStart(2, '0'),
+      ].join('-');
 
       const found = distanceRows.find(r => {
-        const rowDate = new Date(r.date).toISOString().split('T')[0];
+        const rd = new Date(r.date);
+        const rowDate = [
+          rd.getFullYear(),
+          String(rd.getMonth() + 1).padStart(2, '0'),
+          String(rd.getDate()).padStart(2, '0'),
+        ].join('-');
         return rowDate === dateStr;
       });
 
-      // แปลงเป็นชื่อวันภาษาไทย
-      const dayNames = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'];
-      const dayName = dayNames[d.getDay()];
-
       days.push({
-        day: dayName,
+        day: `${d.getDate()}/${d.getMonth() + 1}`, // เปลี่ยนจาก dayName เป็นวันที่
         date: dateStr,
         km: found ? Math.round(Number(found.total_km)) : 0,
       });

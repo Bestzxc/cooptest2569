@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Layout from '../components/Layout';
 import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import Toast, { useToast } from '../components/Toast';
 import { MdLocalShipping, MdAirportShuttle, MdDirectionsCar, MdTwoWheeler, MdLocalGasStation, MdPerson, MdAdd } from 'react-icons/md';
 
@@ -30,6 +31,7 @@ export default function VehiclesPage() {
   const [filterStatus, setFilterStatus] = useState(searchParams.get('status') || 'ALL');
   const [filterType, setFilterType] = useState(searchParams.get('type') || 'ALL');
   const { toast, showToast, hideToast } = useToast();
+  const { user } = useAuth();
   const [selectedVehicle, setSelectedVehicle] = useState(null);
   const [history, setHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -94,9 +96,11 @@ export default function VehiclesPage() {
           <h1 style={styles.title}>Vehicles</h1>
           <p style={styles.subtitle}>จัดการยานพาหนะทั้งหมด</p>
         </div>
-        <button style={styles.primaryBtn} onClick={() => setShowForm(true)}>
-          <MdAdd size={16} /> New Vehicle
-        </button>
+        {user?.role === 'ADMIN' && (
+          <button style={styles.primaryBtn} onClick={() => setShowForm(true)}>
+            <MdAdd size={16} /> New Vehicle
+          </button>
+        )}
       </div>
 
       <div style={styles.filterBar}>

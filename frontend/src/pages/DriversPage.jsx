@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import api from '../services/api';
 import Toast, { useToast } from '../components/Toast';
+import { useAuth } from '../context/AuthContext';
 import { MdAdd, MdPhone, MdCreditCard, MdWarning, MdCheckCircle, MdError, MdPersonAdd } from 'react-icons/md';
 
 export default function DriversPage() {
@@ -9,6 +10,7 @@ export default function DriversPage() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const { toast, showToast, hideToast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => { fetchDrivers(); }, []);
 
@@ -37,9 +39,11 @@ export default function DriversPage() {
           <h1 style={s.title}>Drivers</h1>
           <p style={s.subtitle}>จัดการคนขับทั้งหมด ({drivers.length} คน)</p>
         </div>
-        <button style={s.primaryBtn} onClick={() => setShowForm(true)}>
-          <MdAdd size={16} /> New Driver
-        </button>
+        {user?.role === 'ADMIN' && (
+          <button style={s.primaryBtn} onClick={() => setShowForm(true)}>
+            <MdAdd size={16} /> New Driver
+          </button>
+        )}
       </div>
 
       {loading

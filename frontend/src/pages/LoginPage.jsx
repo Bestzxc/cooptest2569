@@ -63,7 +63,10 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div style={s.hint}>demo: admin / admin123</div>
+        <div style={s.hint}>
+          <div>admin / admin123</div>
+          <div>dispatcher1 / dispatcher123</div>
+        </div>
       </div>
     </div>
   );
@@ -114,5 +117,5 @@ const s = {
     letterSpacing: 2, fontFamily: 'var(--font-display)',
     boxShadow: 'var(--accent-glow)',
   },
-  hint: { textAlign: 'center', fontSize: 11, color: 'var(--text-muted)', marginTop: '1rem' },
+  hint: { textAlign: 'center', fontSize: 11, color: 'var(--text-muted)', marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: 4 },
 };

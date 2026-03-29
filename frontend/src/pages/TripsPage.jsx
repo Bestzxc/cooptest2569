@@ -325,10 +325,17 @@ function TripForm({ onSuccess, onCancel }) {
                 <option value="">-- เลือกรถ --</option>
                 {vehicles.map(v => {
                   const busy = busyVehicleIds.includes(v.id);
+                  const maintenance = v.status === 'MAINTENANCE';
                   return (
-                    <option key={v.id} value={v.id} disabled={busy}>
+                    <option
+                      key={v.id}
+                      value={v.id}
+                      disabled={busy || maintenance}
+                      style={{ color: maintenance ? '#f59e0b' : undefined }}
+                    >
                       {v.license_plate} — {v.brand} {v.model} ({v.status})
                       {busy ? ' 🔴 กำลังวิ่งอยู่' : ''}
+                      {maintenance ? ' 🟠 กำลังบำรุงรักษา' : ''}
                     </option>
                   );
                 })}
