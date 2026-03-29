@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import Layout from '../components/Layout';
 import api from '../services/api';
 import Toast, { useToast } from '../components/Toast';
@@ -19,14 +20,15 @@ const TYPE_ICON = {
 };
 
 export default function VehiclesPage() {
+  const [searchParams, setSearchParams] = useSearchParams();  // ต้องมาก่อน
   const [vehicles, setVehicles] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
-  const [search, setSearch] = useState('');
-  const [filterStatus, setFilterStatus] = useState('ALL');
-  const [filterType, setFilterType] = useState('ALL');
+  const [search, setSearch] = useState(searchParams.get('search') || '');
+  const [filterStatus, setFilterStatus] = useState(searchParams.get('status') || 'ALL');
+  const [filterType, setFilterType] = useState(searchParams.get('type') || 'ALL');
   const { toast, showToast, hideToast } = useToast();
 
   useEffect(() => { fetchAll(); }, []);
@@ -43,9 +45,18 @@ export default function VehiclesPage() {
     }
   };
 
+  const updateFilter = (key, value) => {
+    const params = Object.fromEntries(searchParams);
+    if (value && value !== 'ALL' && value !== '') {
+      params[key] = value;
+    } else {
+      delete params[key];
+    }
+    setSearchParams(params);
+  };
+
   const filtered = useMemo(() => {
     const ORDER = { ACTIVE: 0, IDLE: 1, MAINTENANCE: 2, RETIRED: 3 };
-
     return vehicles
       .filter(v => {
         if (filterStatus !== 'ALL' && v.status !== filterStatus) return false;
@@ -59,7 +70,6 @@ export default function VehiclesPage() {
         return true;
       })
       .sort((a, b) => (ORDER[a.status] ?? 9) - (ORDER[b.status] ?? 9));
-
   }, [vehicles, filterStatus, filterType, search]);
 
   return (
@@ -75,13 +85,34 @@ export default function VehiclesPage() {
       </div>
 
       <div style={styles.filterBar}>
-        <input style={styles.searchInput} placeholder="ค้นหาทะเบียน / ยี่ห้อ / รุ่น..."
-          value={search} onChange={e => setSearch(e.target.value)} />
-        <select style={styles.select} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+        <input
+          style={styles.searchInput}
+          placeholder="ค้นหาทะเบียน / ยี่ห้อ / รุ่น..."
+          value={search}
+          onChange={e => {
+            setSearch(e.target.value);
+            updateFilter('search', e.target.value);
+          }}
+        />
+        <select
+          style={styles.select}
+          value={filterStatus}
+          onChange={e => {
+            setFilterStatus(e.target.value);
+            updateFilter('status', e.target.value);
+          }}
+        >
           <option value="ALL">Status: All</option>
           {['ACTIVE', 'IDLE', 'MAINTENANCE', 'RETIRED'].map(s => <option key={s}>{s}</option>)}
         </select>
-        <select style={styles.select} value={filterType} onChange={e => setFilterType(e.target.value)}>
+        <select
+          style={styles.select}
+          value={filterType}
+          onChange={e => {
+            setFilterType(e.target.value);
+            updateFilter('type', e.target.value);
+          }}
+        >
           <option value="ALL">Type: All</option>
           {['TRUCK', 'VAN', 'PICKUP', 'MOTORCYCLE'].map(t => <option key={t}>{t}</option>)}
         </select>
